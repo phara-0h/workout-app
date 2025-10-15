@@ -1,4 +1,9 @@
 import { defaultProgram } from './programData.js';
+import { supabase, getCurrentUser, saveProgram, getProgram, saveWorkout, getWorkouts, saveCurrentWeek, getCurrentWeek } from './supabase.js';
+import { createAuthUI, checkAuth, signOut } from './auth.js';
+
+// Check if we're in demo mode (localStorage only)
+const isDemoMode = localStorage.getItem('demo-mode') === 'true';
 
 // Simple state management
 class WorkoutStore {
@@ -10,27 +15,83 @@ class WorkoutStore {
     this.expandedExercise = null;
     this.view = 'home';
     this.listeners = [];
-    this.load();
+    this.isAuthenticated = false;
+    this.loading = true;
   }
 
-  load() {
-    const saved = localStorage.getItem('workoutData');
-    if (saved) {
-      const data = JSON.parse(saved);
-      this.currentWeek = data.currentWeek || 1;
-      this.workoutHistory = data.history || [];
-      this.program = data.program || defaultProgram;
+  async init() {
+    // Check authentication
+    if (!isDemoMode) {
+      this.isAuthenticated = await checkAuth();
+      if (!this.isAuthenticated) {
+        this.loading = false;
+        this.notify();
+        return;
+      }
+    }
+
+    // Load data
+    await this.load();
+    this.loading = false;
+    this.notify();
+  }
+
+  async load() {
+    if (isDemoMode) {
+      // Load from localStorage (old way)
+      const saved = localStorage.getItem('workoutData');
+      if (saved) {
+        const data = JSON.parse(saved);
+        this.currentWeek = data.currentWeek || 1;
+        this.workoutHistory = data.history || [];
+        this.program = data.program || defaultProgram;
+      } else {
+        this.program = defaultProgram;
+      }
     } else {
-      this.program = defaultProgram;
+      // Load from Supabase (new way)
+      try {
+        const [program, workouts, week] = await Promise.all([
+          getProgram(),
+          getWorkouts(),
+          getCurrentWeek()
+        ]);
+
+        this.program = program || defaultProgram;
+        this.workoutHistory = workouts || [];
+        this.currentWeek = week || 1;
+
+        // If no program exists yet, save the default one
+        if (!program) {
+          await saveProgram(defaultProgram);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        this.program = defaultProgram;
+      }
     }
   }
 
-  save() {
-    localStorage.setItem('workoutData', JSON.stringify({
-      currentWeek: this.currentWeek,
-      history: this.workoutHistory,
-      program: this.program
-    }));
+  async save() {
+    if (isDemoMode) {
+      // Save to localStorage (old way)
+      localStorage.setItem('workoutData', JSON.stringify({
+        currentWeek: this.currentWeek,
+        history: this.workoutHistory,
+        program: this.program
+      }));
+    } else {
+      // Save to Supabase (new way)
+      try {
+        await Promise.all([
+          saveProgram(this.program),
+          saveCurrentWeek(this.currentWeek)
+        ]);
+      } catch (error) {
+        console.error('Error saving data:', error);
+        alert('Failed to save data. Please try again.');
+      }
+    }
     this.notify();
   }
 
@@ -42,9 +103,9 @@ class WorkoutStore {
     this.listeners.forEach(listener => listener());
   }
 
-  setWeek(week) {
+  async setWeek(week) {
     this.currentWeek = Math.max(1, Math.min(12, week));
-    this.save();
+    await this.save();
   }
 
   startWorkout(dayKey) {
@@ -78,12 +139,28 @@ class WorkoutStore {
     this.notify();
   }
 
-  finishWorkout() {
-    this.workoutHistory = [this.activeWorkout, ...this.workoutHistory];
+  async finishWorkout() {
+    if (isDemoMode) {
+      // Save to localStorage
+      this.workoutHistory = [this.activeWorkout, ...this.workoutHistory];
+      await this.save();
+    } else {
+      // Save to Supabase
+      try {
+        await saveWorkout(this.activeWorkout);
+        // Reload workouts from database
+        this.workoutHistory = await getWorkouts();
+      } catch (error) {
+        console.error('Error saving workout:', error);
+        alert('Failed to save workout. Please try again.');
+        return;
+      }
+    }
+    
     this.activeWorkout = null;
     this.expandedExercise = null;
     this.view = 'home';
-    this.save();
+    this.notify();
   }
 
   cancelWorkout() {
@@ -103,9 +180,9 @@ class WorkoutStore {
     this.notify();
   }
 
-  updateProgram(newProgram) {
+  async updateProgram(newProgram) {
     this.program = newProgram;
-    this.save();
+    await this.save();
   }
 
   getSessionType(week, dayNum) {
@@ -162,6 +239,12 @@ class WorkoutStore {
       deadlift: { max: getMax(deadlift), estimated1RM: getEstimated1RM(deadlift), sessions: deadlift.length }
     };
   }
+
+  async handleSignOut() {
+    if (confirm('Are you sure you want to sign out?')) {
+      await signOut();
+    }
+  }
 }
 
 // Initialize store
@@ -188,6 +271,18 @@ const el = (tag, props = {}, ...children) => {
   });
   return element;
 };
+
+// Loading screen
+function LoadingView() {
+  const container = el('div', { className: 'min-h-screen bg-gray-50 flex items-center justify-center' });
+  container.innerHTML = `
+    <div class="text-center">
+      <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-4"></div>
+      <p class="text-xl text-gray-600">Loading your workouts...</p>
+    </div>
+  `;
+  return container;
+}
 
 // Components
 function HomeView() {
@@ -219,7 +314,11 @@ function HomeView() {
       el('button', {
         className: 'flex-1 bg-blue-500 px-4 py-2 rounded font-medium hover:bg-blue-400',
         onClick: () => store.setView('edit')
-      }, '✏️ Edit')
+      }, '✏️ Edit'),
+      !isDemoMode ? el('button', {
+        className: 'bg-red-500 px-4 py-2 rounded font-medium hover:bg-red-400',
+        onClick: () => store.handleSignOut()
+      }, '🚪') : null
     )
   );
 
@@ -459,8 +558,8 @@ function EditProgramView() {
       el('h1', { className: 'text-2xl font-bold' }, 'Edit Program'),
       el('button', {
         className: 'bg-green-500 px-4 py-2 rounded font-medium',
-        onClick: () => {
-          store.updateProgram(tempProgram);
+        onClick: async () => {
+          await store.updateProgram(tempProgram);
           store.setView('home');
         }
       }, '💾 Save')
@@ -547,6 +646,19 @@ function render() {
   const root = document.getElementById('root');
   root.innerHTML = '';
   
+  // Show loading screen while initializing
+  if (store.loading) {
+    root.appendChild(LoadingView());
+    return;
+  }
+
+  // Show auth UI if not authenticated and not in demo mode
+  if (!isDemoMode && !store.isAuthenticated) {
+    root.appendChild(createAuthUI());
+    return;
+  }
+
+  // Show main app
   let view;
   switch (store.view) {
     case 'workout':
@@ -565,6 +677,17 @@ function render() {
   root.appendChild(view);
 }
 
+// Listen for auth changes
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN') {
+    store.isAuthenticated = true;
+    store.init();
+  } else if (event === 'SIGNED_OUT') {
+    store.isAuthenticated = false;
+    store.notify();
+  }
+});
+
 // Initialize app
 store.subscribe(render);
-render();
+store.init();
