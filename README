@@ -1,0 +1,110 @@
+# DUP Workout Tracker
+
+A Progressive Web App for tracking Daily Undulating Periodization (DUP) workouts with RPE-based training.
+
+## Features
+
+- 📊 Track workouts with sets, reps, and RPE
+- 📈 Progress tracking for Big 3 lifts (Squat, Bench, Deadlift)
+- ✏️ Fully customizable exercises and programs
+- 💾 All data saved locally (works offline)
+- 📱 Install as standalone app on mobile devices
+- 🔄 Automatic DUP session rotation (Strength/Hypertrophy/Power)
+
+## File Structure
+
+```
+workout-tracker/
+├── index.html          # Main HTML file
+├── app.js              # Main application logic
+├── programData.js      # Default workout program data
+├── styles.css          # Custom styles
+├── manifest.json       # PWA manifest for install
+└── README.md           # This file
+```
+
+## Files Explained
+
+### `index.html`
+- Basic HTML structure
+- Loads all scripts and styles
+- Contains the root div for the app
+
+### `app.js`
+- Main application logic
+- State management (WorkoutStore class)
+- All UI components and rendering
+- Event handlers
+
+### `programData.js`
+- Default 4-day DUP program
+- Easy to modify exercises, sets, reps
+- Separated for easy customization
+
+### `styles.css`
+- Custom CSS styles
+- Scrollbar customization
+- Loading states
+
+### `manifest.json`
+- PWA configuration
+- App name, icons, colors
+- Enables "Add to Home Screen"
+
+## How to Modify
+
+### Change Exercises
+Edit `programData.js` to modify the default program:
+```javascript
+{
+  name: "Your Exercise",
+  type: "accessory",
+  sets: "3x10-12",
+  rpe: "RPE 7-8"
+}
+```
+
+### Change Styling
+Edit `styles.css` or modify Tailwind classes in `app.js`
+
+### Change DUP Logic
+Modify `getSessionType()` in `app.js` to change rotation pattern
+
+## Installation
+
+### On GitHub Pages
+1. Upload all files to your repository
+2. Enable GitHub Pages in Settings
+3. Access at `https://yourusername.github.io/workout-tracker`
+
+### On Phone
+**iPhone:**
+1. Open in Safari
+2. Tap Share → Add to Home Screen
+
+**Android:**
+1. Open in Chrome
+2. Tap Menu → Install App
+
+## Usage
+
+1. **Select Week** - Use +/- buttons to set current training week
+2. **Start Workout** - Tap a workout day to begin
+3. **Log Sets** - Enter weight, reps, RPE for each set
+4. **View Progress** - Track your Big 3 progress over time
+5. **Edit Program** - Customize exercises and set/rep schemes
+
+## Data Storage
+
+All data is stored locally in your browser using `localStorage`. Your workout history never leaves your device.
+
+## Technologies Used
+
+- Vanilla JavaScript (ES6 modules)
+- Tailwind CSS (via CDN)
+- LocalStorage API
+- PWA features (manifest, service worker ready)
+
+## License
+
+Free to use and modify for personal use.
