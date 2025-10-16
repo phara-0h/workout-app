@@ -21,6 +21,7 @@ class WorkoutStore {
     this.listeners = [];
     this.isAuthenticated = false;
     this.loading = true;
+    this.exerciseLibrary = [];
   }
 
   async init() {
@@ -34,6 +35,7 @@ class WorkoutStore {
     }
 
     await this.load();
+    await this.loadExerciseLibrary();
     this.loading = false;
     this.notify();
   }
@@ -177,6 +179,12 @@ class WorkoutStore {
   async updateProgram(newProgram) {
     this.program = newProgram;
     await this.save();
+  }
+
+  async loadExerciseLibrary() {
+    const { getAllExercises } = await import('./exerciseLibrary.js');
+    this.exerciseLibrary = await getAllExercises();
+    this.notify();
   }
 
   getSessionType(week, dayNum) {

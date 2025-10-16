@@ -7,6 +7,7 @@ import { HomeView } from './components/HomeView.js';
 import { WorkoutView } from './components/WorkoutView.js';
 import { ProgressView } from './components/ProgressView.js';
 import { EditView } from './components/EditView.js';
+import { ExerciseLibraryView } from './components/ExerciseLibraryView.js';
 
 function render() {
   const root = document.getElementById('root');
@@ -34,6 +35,9 @@ function render() {
       break;
     case 'edit':
       view = EditView();
+      break;
+    case 'exercise-library':
+      view = ExerciseLibraryView();
       break;
     default:
       view = HomeView();

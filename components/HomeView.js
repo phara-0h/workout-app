@@ -35,6 +35,10 @@ export function HomeView() {
       }, '📊 Progress'),
       el('button', {
         className: 'flex-1 bg-blue-500 px-4 py-2 rounded font-medium hover:bg-blue-400',
+        onClick: () => store.setView('exercise-library')
+      }, '📚 Library'),
+      el('button', {
+        className: 'flex-1 bg-blue-500 px-4 py-2 rounded font-medium hover:bg-blue-400',
         onClick: () => store.setView('edit')
       }, '✏️ Edit'),
       !isDemoMode ? el('button', {
