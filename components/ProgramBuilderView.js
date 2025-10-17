@@ -75,7 +75,7 @@ export default function ProgramBuilderView() {
       const examples = el('div', { className: 'mt-8' },
         el('h3', { className: 'text-sm font-medium text-gray-700 mb-3' }, 'Need ideas? Try one of these:'),
         el('div', { className: 'grid grid-cols-2 gap-3' },
-          ['Push/Pull/Legs', 'Upper/Lower', 'Full Body', 'Bro Split'].map((name) =>
+          ...['Push/Pull/Legs', 'Upper/Lower', 'Full Body', 'Bro Split'].map((name) =>
             el('button', {
               className: 'p-3 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 text-sm text-left',
               onClick: () => {
@@ -192,7 +192,7 @@ export default function ProgramBuilderView() {
 
     const tabs = el('div', { className: 'mb-6 overflow-x-auto' },
       el('div', { className: 'flex gap-2 pb-2' },
-        builder.days.map((day, index) =>
+        ...builder.days.map((day, index) =>
           el('button', {
             className: `px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
               index === builder.currentDayIndex
