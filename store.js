@@ -1,11 +1,12 @@
 import { defaultProgram } from './programData.js';
 import {
   saveProgram,
-  getProgram,
   saveWorkout,
   getWorkouts,
   saveCurrentWeek,
-  getCurrentWeek
+  getCurrentWeek,
+  getActiveProgram,
+  updateProgram
 } from './supabase.js';
 import { checkAuth, signOut } from './auth.js';
 import { isDemoMode } from './utils.js';
@@ -22,6 +23,14 @@ class WorkoutStore {
     this.isAuthenticated = false;
     this.loading = true;
     this.exerciseLibrary = [];
+    this.currentProgram = null;
+    this.currentProgramId = null;
+    this.programBuilder = {
+      step: 1,
+      programName: '',
+      days: [],
+      currentDayIndex: null
+    };
   }
 
   async init() {
@@ -34,6 +43,7 @@ class WorkoutStore {
       }
     }
 
+    await this.loadProgram();
     await this.load();
     await this.loadExerciseLibrary();
     this.loading = false;
@@ -47,45 +57,72 @@ class WorkoutStore {
         const data = JSON.parse(saved);
         this.currentWeek = data.currentWeek || 1;
         this.workoutHistory = data.history || [];
-        this.program = data.program || defaultProgram;
-      } else {
-        this.program = defaultProgram;
+        if (!this.program && data.program) {
+          this.program = data.program;
+        }
+      }
+      if (!this.program && this.currentProgram) {
+        this.program = this.normalizeProgram(this.currentProgram);
       }
     } else {
       try {
-        const [program, workouts, week] = await Promise.all([
-          getProgram(),
+        const [workouts, week] = await Promise.all([
           getWorkouts(),
           getCurrentWeek()
         ]);
 
-        this.program = program || defaultProgram;
         this.workoutHistory = workouts || [];
         this.currentWeek = week || 1;
-
-        if (!program) {
-          await saveProgram(defaultProgram);
-        }
       } catch (error) {
         console.error('Error loading data:', error);
-        this.program = defaultProgram;
       }
+      if (!this.program && this.currentProgram) {
+        this.program = this.normalizeProgram(this.currentProgram);
+      }
+    }
+
+    if (!this.program) {
+      this.program = defaultProgram;
     }
   }
 
-  async save() {
+  async save(options = {}) {
+    const { persistProgram = true } = options;
+
     if (isDemoMode) {
-      localStorage.setItem('workoutData', JSON.stringify({
+      const payload = {
         currentWeek: this.currentWeek,
         history: this.workoutHistory,
         program: this.program
-      }));
+      };
+      localStorage.setItem('workoutData', JSON.stringify(payload));
+
+      if (persistProgram) {
+        const builderProgram = this.buildProgramDataFromCurrent();
+        if (builderProgram) {
+          localStorage.setItem('workout-program', JSON.stringify(builderProgram));
+          this.currentProgram = builderProgram;
+        }
+      }
     } else {
       try {
-        await Promise.all([
-          saveProgram(this.program),
-          saveCurrentWeek(this.currentWeek)
-        ]);
+        const operations = [saveCurrentWeek(this.currentWeek)];
+
+        if (persistProgram) {
+          const builderProgram = this.buildProgramDataFromCurrent();
+          if (builderProgram) {
+            const persistence = (this.currentProgramId
+              ? updateProgram(this.currentProgramId, builderProgram)
+              : saveProgram(builderProgram))
+              .then((saved) => {
+                this.currentProgram = saved?.program_data || builderProgram;
+                this.currentProgramId = saved?.id ?? this.currentProgramId;
+              });
+            operations.push(persistence);
+          }
+        }
+
+        await Promise.all(operations);
       } catch (error) {
         console.error('Error saving data:', error);
         alert('Failed to save data. Please try again.');
@@ -104,7 +141,7 @@ class WorkoutStore {
 
   async setWeek(week) {
     this.currentWeek = Math.max(1, Math.min(12, week));
-    await this.save();
+    await this.save({ persistProgram: false });
   }
 
   startWorkout(dayKey) {
@@ -141,7 +178,7 @@ class WorkoutStore {
   async finishWorkout() {
     if (isDemoMode) {
       this.workoutHistory = [this.activeWorkout, ...this.workoutHistory];
-      await this.save();
+      await this.save({ persistProgram: false });
     } else {
       try {
         await saveWorkout(this.activeWorkout);
@@ -178,13 +215,151 @@ class WorkoutStore {
 
   async updateProgram(newProgram) {
     this.program = newProgram;
-    await this.save();
+    await this.save({ persistProgram: true });
   }
 
   async loadExerciseLibrary() {
     const { getAllExercises } = await import('./exerciseLibrary.js');
     this.exerciseLibrary = await getAllExercises();
     this.notify();
+  }
+
+  async loadProgram() {
+    if (isDemoMode) {
+      const saved = localStorage.getItem('workout-program');
+      if (saved) {
+        try {
+          const program = JSON.parse(saved);
+          this.currentProgram = program;
+          const normalized = this.normalizeProgram(program);
+          if (normalized) {
+            this.program = normalized;
+          }
+        } catch (error) {
+          console.error('Failed to parse stored program:', error);
+        }
+      } else {
+        this.currentProgram = null;
+      }
+    } else {
+      try {
+        const record = await getActiveProgram();
+        if (record) {
+          this.currentProgram = record.program_data;
+          this.currentProgramId = record.id;
+          const normalized = this.normalizeProgram(record.program_data);
+          if (normalized) {
+            this.program = normalized;
+          }
+        } else {
+          this.currentProgram = null;
+          this.currentProgramId = null;
+        }
+      } catch (error) {
+        console.error('Error loading program:', error);
+        this.currentProgram = null;
+      }
+    }
+  }
+
+  async saveCurrentProgram(programData) {
+    if (!programData || !Array.isArray(programData.days)) {
+      throw new Error('Invalid program data');
+    }
+
+    if (isDemoMode) {
+      localStorage.setItem('workout-program', JSON.stringify(programData));
+      this.currentProgram = programData;
+      const normalized = this.normalizeProgram(programData);
+      if (normalized) {
+        this.program = normalized;
+      }
+    } else {
+      const saved = await saveProgram(programData);
+      this.currentProgram = saved?.program_data || programData;
+      this.currentProgramId = saved?.id ?? null;
+      const normalized = this.normalizeProgram(this.currentProgram);
+      if (normalized) {
+        this.program = normalized;
+      }
+    }
+
+    this.resetProgramBuilder();
+    await this.save({ persistProgram: false });
+  }
+
+  resetProgramBuilder() {
+    this.programBuilder = {
+      step: 1,
+      programName: '',
+      days: [],
+      currentDayIndex: null
+    };
+  }
+
+  normalizeProgram(programData) {
+    if (!programData || !Array.isArray(programData.days)) {
+      return null;
+    }
+
+    const normalized = {};
+    programData.days.forEach((day, index) => {
+      const key = `day${index + 1}`;
+      const exercises = (day.exercises || []).map((exercise) => {
+        const base = {
+          name: exercise.exercise_name,
+          type: exercise.is_main ? 'main' : 'accessory'
+        };
+
+        if (exercise.exercise_id) {
+          base.exercise_id = exercise.exercise_id;
+        }
+
+        if (exercise.is_main) {
+          base.rotation = exercise.rotation || [];
+        } else {
+          base.sets = exercise.sets || '';
+          base.rpe = exercise.rpe || '';
+        }
+
+        return base;
+      });
+
+      normalized[key] = {
+        name: day.name || `Day ${index + 1}`,
+        exercises
+      };
+    });
+
+    return normalized;
+  }
+
+  buildProgramDataFromCurrent() {
+    if (!this.program) {
+      return null;
+    }
+
+    const dayKeys = Object.keys(this.program).sort();
+    const days = dayKeys.map((key, index) => {
+      const day = this.program[key];
+      return {
+        id: day.id || `day-${index + 1}`,
+        name: day.name || `Day ${index + 1}`,
+        exercises: (day.exercises || []).map((exercise) => ({
+          exercise_id: exercise.exercise_id || null,
+          exercise_name: exercise.name,
+          is_main: exercise.type === 'main',
+          rotation: exercise.type === 'main' ? (exercise.rotation || []) : null,
+          sets: exercise.type !== 'main' ? (exercise.sets || '') : null,
+          rpe: exercise.type !== 'main' ? (exercise.rpe || '') : null
+        }))
+      };
+    });
+
+    return {
+      name: this.currentProgram?.name || this.programBuilder.programName || 'Custom Program',
+      days
+    };
   }
 
   getSessionType(week, dayNum) {

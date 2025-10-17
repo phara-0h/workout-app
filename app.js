@@ -8,6 +8,8 @@ import { WorkoutView } from './components/WorkoutView.js';
 import { ProgressView } from './components/ProgressView.js';
 import { EditView } from './components/EditView.js';
 import { ExerciseLibraryView } from './components/ExerciseLibraryView.js';
+import ProgramBuilderView from './components/ProgramBuilderView.js';
+import EmptyStateView from './components/EmptyStateView.js';
 
 function render() {
   const root = document.getElementById('root');
@@ -38,6 +40,12 @@ function render() {
       break;
     case 'exercise-library':
       view = ExerciseLibraryView();
+      break;
+    case 'program-builder':
+      view = ProgramBuilderView();
+      break;
+    case 'empty-state':
+      view = EmptyStateView();
       break;
     default:
       view = HomeView();

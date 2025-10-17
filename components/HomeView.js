@@ -1,7 +1,12 @@
 import { el, isDemoMode } from '../utils.js';
 import { store } from '../store.js';
+import EmptyStateView from './EmptyStateView.js';
 
 export function HomeView() {
+  if (!store.currentProgram) {
+    return EmptyStateView();
+  }
+
   const container = el('div', { className: 'min-h-screen bg-gray-50 pb-20' });
 
   if (!store.program) {

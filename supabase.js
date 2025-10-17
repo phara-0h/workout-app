@@ -16,58 +16,12 @@ export async function getCurrentUser() {
   return user;
 }
 
-// Save or update the user's active program
-export async function saveProgram(programData) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error('Not authenticated');
-
-  // Check if user already has an active program
-  const { data: existing } = await supabase
-    .from('programs')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('is_active', true)
-    .single();
-
-  if (existing) {
-    // Update existing program
-    const { error } = await supabase
-      .from('programs')
-      .update({
-        program_data: programData,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', existing.id);
-    
-    if (error) throw error;
-  } else {
-    // Create new program
-    const { error } = await supabase
-      .from('programs')
-      .insert({
-        user_id: user.id,
-        name: 'DUP Program',
-        program_data: programData,
-        is_active: true
-      });
-    
-    if (error) throw error;
-  }
-}
-
 // Get the user's active program
 export async function getProgram() {
   const user = await getCurrentUser();
   if (!user) return null;
 
-  const { data, error } = await supabase
-    .from('programs')
-    .select('program_data')
-    .eq('user_id', user.id)
-    .eq('is_active', true)
-    .single();
-
-  if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows found
+  const data = await getActiveProgram();
   return data?.program_data || null;
 }
 
@@ -157,4 +111,85 @@ export async function getCurrentWeek() {
     .single();
 
   return data?.current_week || 1;
+}
+
+/**
+ * Get user's active program
+ */
+export async function getActiveProgram() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from('programs')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Error fetching active program:', error);
+    return null;
+  }
+
+  return data;
+}
+
+/**
+ * Save a new program
+ */
+export async function saveProgram(programData) {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  await supabase
+    .from('programs')
+    .update({ is_active: false })
+    .eq('user_id', user.id)
+    .eq('is_active', true);
+
+  const { data, error } = await supabase
+    .from('programs')
+    .insert([
+      {
+        user_id: user.id,
+        name: programData.name,
+        program_data: programData,
+        is_active: true
+      }
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error saving program:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Update existing program
+ */
+export async function updateProgram(programId, programData) {
+  const { data, error } = await supabase
+    .from('programs')
+    .update({
+      program_data: programData,
+      name: programData.name
+    })
+    .eq('id', programId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating program:', error);
+    throw error;
+  }
+
+  return data;
 }
