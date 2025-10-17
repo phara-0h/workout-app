@@ -44,6 +44,7 @@ export default function ProgramBuilderView() {
         if (!builder.programName.trim()) return;
         builder.step = 2;
         store.notify();
+        render();
       }
     }, builder.isEditing ? 'Next: Review Workout Days →' : 'Next: Add Workout Days →');
 
@@ -131,6 +132,7 @@ export default function ProgramBuilderView() {
                   builder.currentDayIndex = builder.days.length - 1;
                 }
                 store.notify();
+                render();
               }
             }, '🗑️')
           )
@@ -150,6 +152,7 @@ export default function ProgramBuilderView() {
           exercises: []
         });
         store.notify();
+        render();
       }
     }, '+ Add Workout Day'));
 
@@ -164,6 +167,7 @@ export default function ProgramBuilderView() {
         onClick: () => {
           builder.step = 1;
           store.notify();
+          render();
         }
       }, '← Back'),
       el('button', {
@@ -174,6 +178,7 @@ export default function ProgramBuilderView() {
           builder.step = 3;
           builder.currentDayIndex = 0;
           store.notify();
+          render();
         }
       }, builder.isEditing ? 'Next: Update Exercises →' : 'Next: Add Exercises →')
     ));
@@ -202,6 +207,7 @@ export default function ProgramBuilderView() {
             onClick: () => {
               builder.currentDayIndex = index;
               store.notify();
+              render();
             }
           }, day.name)
         )
@@ -243,6 +249,7 @@ export default function ProgramBuilderView() {
                 onClick: () => {
                   currentDay.exercises.splice(index, 1);
                   store.notify();
+                  render();
                 }
               }, '🗑️')
             )
@@ -268,6 +275,7 @@ export default function ProgramBuilderView() {
               rpe: !config.is_main ? config.rpe : null
             });
             store.notify();
+            render();
           }, () => {
             document.body.removeChild(configModal);
           });
@@ -288,6 +296,7 @@ export default function ProgramBuilderView() {
           if (builder.currentDayIndex > 0) {
             builder.currentDayIndex -= 1;
             store.notify();
+            render();
           }
         }
       }, '← Previous Day'),
@@ -296,6 +305,7 @@ export default function ProgramBuilderView() {
         onClick: () => {
           builder.step = 2;
           store.notify();
+          render();
         }
       }, 'Back to Days'),
       builder.currentDayIndex < builder.days.length - 1
@@ -305,6 +315,7 @@ export default function ProgramBuilderView() {
               if (builder.currentDayIndex < builder.days.length - 1) {
                 builder.currentDayIndex += 1;
                 store.notify();
+                render();
               }
             }
           }, 'Next Day →')
