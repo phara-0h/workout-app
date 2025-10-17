@@ -5,7 +5,6 @@ export default function TrackWorkoutView() {
   let workout = store.activeWorkout;
 
   if (!workout) {
-    store.setView('workout');
     return el('div');
   }
 
@@ -58,7 +57,6 @@ export default function TrackWorkoutView() {
 
     if (!workout) {
       stopRestTimer();
-      store.setView('workout');
       return;
     }
 
@@ -187,7 +185,9 @@ export default function TrackWorkoutView() {
       el('div', { className: 'px-6 py-4 space-y-3' },
         exercise.sets.length === 0
           ? el('p', { className: 'text-center text-sm text-gray-500 py-4 bg-gray-50 rounded-lg' }, 'No sets logged yet.')
-          : exercise.sets.map((set, setIndex) => renderSetRow(set, exIndex, setIndex)),
+          : el('div', { className: 'space-y-2' },
+              ...exercise.sets.map((set, setIndex) => renderSetRow(set, exIndex, setIndex))
+            ),
         el('button', {
           className: 'w-full mt-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold py-2 rounded-lg border border-indigo-100',
           onClick: () => store.addWorkoutSet(exIndex)
