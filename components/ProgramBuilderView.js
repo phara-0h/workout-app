@@ -42,30 +42,38 @@ export default function ProgramBuilderView() {
     const card = el('div', { className: 'bg-white rounded-xl shadow-sm p-8' });
 
     card.appendChild(el('label', { className: 'block text-sm font-medium text-gray-700 mb-2' }, 'Program Name'));
-    card.appendChild(el('input', {
-      type: 'text',
-      className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
-      placeholder: 'e.g., Push/Pull/Legs, Upper/Lower, Bro Split',
-      value: builder.programName,
-      onInput: (event) => {
-        builder.programName = event.target.value;
-        store.notify();
-      }
-    }));
 
     const nextButton = el('button', {
-      className: `px-6 py-3 rounded-lg font-semibold ${
-        builder.programName.trim()
-          ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-      }`,
-      disabled: !builder.programName.trim(),
+      className: '',
+      disabled: true,
       onClick: () => {
         if (!builder.programName.trim()) return;
         builder.step = 2;
         store.notify();
       }
     }, isEditing ? 'Next: Review Workout Days →' : 'Next: Add Workout Days →');
+
+    const updateNextButtonState = () => {
+      const enabled = builder.programName.trim().length > 0;
+      nextButton.disabled = !enabled;
+      nextButton.className = enabled
+        ? 'px-6 py-3 rounded-lg font-semibold bg-indigo-600 hover:bg-indigo-700 text-white'
+        : 'px-6 py-3 rounded-lg font-semibold bg-gray-300 text-gray-500 cursor-not-allowed';
+    };
+
+    const nameInput = el('input', {
+      type: 'text',
+      className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+      placeholder: 'e.g., Push/Pull/Legs, Upper/Lower, Bro Split',
+      value: builder.programName,
+      onInput: (event) => {
+        builder.programName = event.target.value;
+        updateNextButtonState();
+      }
+    });
+
+    card.appendChild(nameInput);
+    updateNextButtonState();
 
     const actions = el('div', { className: 'mt-6 flex justify-end' }, nextButton);
     card.appendChild(actions);
@@ -80,7 +88,8 @@ export default function ProgramBuilderView() {
           className: 'p-3 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 text-sm text-left',
           onClick: () => {
             builder.programName = name;
-            store.notify();
+            nameInput.value = name;
+            updateNextButtonState();
           }
         }, name));
       });
@@ -105,16 +114,16 @@ export default function ProgramBuilderView() {
       builder.days.forEach((day, index) => {
         const row = el('div', { className: 'flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200' });
         row.appendChild(el('span', { className: 'text-2xl' }, '📅'));
-        row.appendChild(el('input', {
+        const dayInput = el('input', {
           type: 'text',
           className: 'flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
           value: day.name,
           placeholder: `Day ${index + 1}`,
           onInput: (event) => {
             builder.days[index].name = event.target.value;
-            store.notify();
           }
-        }));
+        });
+        row.appendChild(dayInput);
         row.appendChild(el('button', {
           className: 'text-red-500 hover:text-red-700 font-medium px-3 py-2',
           onClick: () => {
