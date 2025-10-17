@@ -131,9 +131,8 @@ export default function TrackWorkoutView() {
       )
     );
 
-    const exercisesList = el('div', { className: 'max-w-4xl mx-auto px-4 pb-24 space-y-4' },
-      exercises.map((exercise, exIndex) => renderExercise(exercise, exIndex))
-    );
+    const exerciseCards = exercises.map((exercise, exIndex) => renderExercise(exercise, exIndex));
+    const exercisesList = el('div', { className: 'max-w-4xl mx-auto px-4 pb-24 space-y-4' }, ...exerciseCards);
 
     const actionBar = el('div', {
       className: 'fixed left-0 right-0 bottom-0 bg-white border-t border-gray-200 py-4 px-6 flex flex-col sm:flex-row gap-3 sm:gap-4'
