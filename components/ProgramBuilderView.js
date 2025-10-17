@@ -43,8 +43,9 @@ export default function ProgramBuilderView() {
       onClick: () => {
         if (!builder.programName.trim()) return;
         builder.step = 2;
-        store.notify();
-        render();
+        setTimeout(() => {
+          store.notify();
+        }, 0);
       }
     }, builder.isEditing ? 'Next: Review Workout Days →' : 'Next: Add Workout Days →');
 
@@ -131,8 +132,9 @@ export default function ProgramBuilderView() {
                 if (builder.currentDayIndex != null && builder.currentDayIndex >= builder.days.length) {
                   builder.currentDayIndex = builder.days.length - 1;
                 }
-                store.notify();
-                render();
+                setTimeout(() => {
+                  store.notify();
+                }, 0);
               }
             }, '🗑️')
           )
@@ -151,8 +153,9 @@ export default function ProgramBuilderView() {
           name: `Day ${dayNumber}`,
           exercises: []
         });
-        store.notify();
-        render();
+        setTimeout(() => {
+          store.notify();
+        }, 0);
       }
     }, '+ Add Workout Day'));
 
@@ -166,8 +169,9 @@ export default function ProgramBuilderView() {
         className: 'px-6 py-3 text-gray-700 font-semibold hover:bg-gray-100 rounded-lg',
         onClick: () => {
           builder.step = 1;
-          store.notify();
-          render();
+          setTimeout(() => {
+            store.notify();
+          }, 0);
         }
       }, '← Back'),
       el('button', {
@@ -178,8 +182,9 @@ export default function ProgramBuilderView() {
           console.log('Advancing to step 3', { days: builder.days.length, builder });
           builder.step = 3;
           builder.currentDayIndex = 0;
-          store.notify();
-          render();
+          setTimeout(() => {
+            store.notify();
+          }, 0);
         }
       }, builder.isEditing ? 'Next: Update Exercises →' : 'Next: Add Exercises →')
     ));
@@ -207,8 +212,9 @@ export default function ProgramBuilderView() {
             }`,
             onClick: () => {
               builder.currentDayIndex = index;
-              store.notify();
-              render();
+              setTimeout(() => {
+                store.notify();
+              }, 0);
             }
           }, day.name)
         )
@@ -249,8 +255,9 @@ export default function ProgramBuilderView() {
                 className: 'text-red-500 hover:text-red-700 ml-4',
                 onClick: () => {
                   currentDay.exercises.splice(index, 1);
-                  store.notify();
-                  render();
+                  setTimeout(() => {
+                    store.notify();
+                  }, 0);
                 }
               }, '🗑️')
             )
@@ -275,8 +282,9 @@ export default function ProgramBuilderView() {
               sets: !config.is_main ? config.sets : null,
               rpe: !config.is_main ? config.rpe : null
             });
-            store.notify();
-            render();
+            setTimeout(() => {
+              store.notify();
+            }, 0);
           }, () => {
             document.body.removeChild(configModal);
           });
@@ -296,8 +304,9 @@ export default function ProgramBuilderView() {
         onClick: () => {
           if (builder.currentDayIndex > 0) {
             builder.currentDayIndex -= 1;
-            store.notify();
-            render();
+            setTimeout(() => {
+              store.notify();
+            }, 0);
           }
         }
       }, '← Previous Day'),
@@ -305,8 +314,9 @@ export default function ProgramBuilderView() {
         className: 'px-6 py-3 text-gray-600 font-medium hover:bg-gray-100 rounded-lg',
         onClick: () => {
           builder.step = 2;
-          store.notify();
-          render();
+          setTimeout(() => {
+            store.notify();
+          }, 0);
         }
       }, 'Back to Days'),
       builder.currentDayIndex < builder.days.length - 1
@@ -315,8 +325,9 @@ export default function ProgramBuilderView() {
             onClick: () => {
               if (builder.currentDayIndex < builder.days.length - 1) {
                 builder.currentDayIndex += 1;
-                store.notify();
-                render();
+                setTimeout(() => {
+                  store.notify();
+                }, 0);
               }
             }
           }, 'Next Day →')
