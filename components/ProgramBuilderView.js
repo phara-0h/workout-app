@@ -82,6 +82,22 @@ export default function ProgramBuilderView() {
   };
 
   const renderStep1 = () => {
+    const nextButton = el('button', {
+      className: state.programName.trim()
+        ? 'px-6 py-3 rounded-lg font-semibold bg-indigo-600 hover:bg-indigo-700 text-white'
+        : 'px-6 py-3 rounded-lg font-semibold bg-gray-300 text-gray-500 cursor-not-allowed',
+      disabled: !state.programName.trim(),
+      onClick: () => goToStep(2)
+    }, state.isEditing ? 'Next: Review Workout Days →' : 'Next: Add Workout Days →');
+
+    const updateButton = () => {
+      const isEnabled = state.programName.trim();
+      nextButton.className = isEnabled
+        ? 'px-6 py-3 rounded-lg font-semibold bg-indigo-600 hover:bg-indigo-700 text-white'
+        : 'px-6 py-3 rounded-lg font-semibold bg-gray-300 text-gray-500 cursor-not-allowed';
+      nextButton.disabled = !isEnabled;
+    };
+
     const card = el('div', { className: 'bg-white rounded-xl shadow-sm p-8 space-y-6' },
       el('div', {},
         el('label', { className: 'block text-sm font-medium text-gray-700 mb-2' }, 'Program Name'),
@@ -92,19 +108,11 @@ export default function ProgramBuilderView() {
           placeholder: 'e.g., Push/Pull/Legs, Upper/Lower, Bro Split',
           onInput: (event) => {
             state.programName = event.target.value;
-            render();
+            updateButton();
           }
         })
       ),
-      el('div', { className: 'flex justify-end' },
-        el('button', {
-          className: state.programName.trim()
-            ? 'px-6 py-3 rounded-lg font-semibold bg-indigo-600 hover:bg-indigo-700 text-white'
-            : 'px-6 py-3 rounded-lg font-semibold bg-gray-300 text-gray-500 cursor-not-allowed',
-          disabled: !state.programName.trim(),
-          onClick: () => goToStep(2)
-        }, state.isEditing ? 'Next: Review Workout Days →' : 'Next: Add Workout Days →')
-      )
+      el('div', { className: 'flex justify-end' }, nextButton)
     );
 
     if (!state.isEditing) {
