@@ -175,6 +175,7 @@ export default function ProgramBuilderView() {
         disabled: !nextEnabled,
         onClick: () => {
           if (!nextEnabled) return;
+          console.log('Advancing to step 3', { days: builder.days.length, builder });
           builder.step = 3;
           builder.currentDayIndex = 0;
           store.notify();
