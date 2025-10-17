@@ -89,19 +89,6 @@ export async function deleteWorkout(workoutId) {
 }
 
 // Delete a workout
-export async function deleteWorkout(workoutId) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error('Not authenticated');
-
-  const { error } = await supabase
-    .from('workouts')
-    .delete()
-    .eq('id', workoutId)
-    .eq('user_id', user.id);
-
-  if (error) throw error;
-}
-
 // Save current week number
 export async function saveCurrentWeek(week) {
   const user = await getCurrentUser();
