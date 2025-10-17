@@ -57,7 +57,7 @@ export default function HomeView() {
             onClick: () => store.setView('progress')
           }, 'View all →')
         ),
-        store.workoutHistory.slice(0, 5).map((workout) => {
+        ...store.workoutHistory.slice(0, 5).map((workout) => {
           const dateLabel = workout.date ? new Date(workout.date).toLocaleDateString() : 'Unknown date';
           const setCount = workout.exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
           return el('div', { className: 'flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 py-2 border-b border-gray-100 last:border-b-0' },
