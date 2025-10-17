@@ -1,7 +1,7 @@
 import { el } from '../utils.js';
 import { store } from '../store.js';
 import { getAllExercises, deleteCustomExercise, searchExercises } from '../exerciseLibrary.js';
-import { AddExerciseModal } from './AddExerciseModal.js';
+import AddExerciseModal from './AddExerciseModal.js';
 
 export function ExerciseLibraryView() {
   const container = el('div', { className: 'min-h-screen bg-gray-50 pb-20' });
