@@ -37,7 +37,13 @@ export default function WorkoutView() {
           onClick: () => store.setView('home')
         }, '← Back'),
         el('h1', { className: 'text-xl font-bold text-gray-900' }, programData.name || 'My Program'),
-        el('div', { className: 'w-16' })
+        el('button', {
+          className: 'text-indigo-600 hover:text-indigo-700 font-medium',
+          onClick: () => {
+            store.loadProgramForEditing(programRecord);
+            store.setView('programBuilder');
+          }
+        }, '✏️ Edit')
       )
     );
 

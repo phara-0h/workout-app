@@ -285,6 +285,9 @@ class WorkoutStore {
       throw new Error('Invalid program data');
     }
 
+    const isEditing = this.programBuilder.isEditing;
+    const sourceProgramId = this.programBuilder.sourceProgramId;
+
     if (isDemoMode) {
       localStorage.setItem('workout-program', JSON.stringify(programData));
       this.currentProgram = programData;
@@ -293,7 +296,16 @@ class WorkoutStore {
         this.program = normalized;
       }
     } else {
-      const saved = await saveProgram(programData);
+      let saved;
+      if (isEditing && sourceProgramId) {
+        // Update existing program
+        const { updateProgram } = await import('./supabase.js');
+        saved = await updateProgram(sourceProgramId, programData);
+      } else {
+        // Create new program
+        const { saveProgram } = await import('./supabase.js');
+        saved = await saveProgram(programData);
+      }
       this.currentProgram = saved?.program_data || programData;
       this.currentProgramId = saved?.id ?? null;
       const normalized = this.normalizeProgram(this.currentProgram);
@@ -315,6 +327,27 @@ class WorkoutStore {
       isEditing: false,
       sourceProgramId: null
     };
+  }
+
+  loadProgramForEditing(programRecord) {
+    if (!programRecord) {
+      console.error('No program record provided for editing');
+      return;
+    }
+
+    const programData = programRecord.program_data || programRecord;
+    const clonedDays = JSON.parse(JSON.stringify(programData.days || []));
+
+    this.programBuilder = {
+      step: 1,
+      programName: programData.name || '',
+      days: clonedDays,
+      currentDayIndex: 0,
+      isEditing: true,
+      sourceProgramId: programRecord.id || null
+    };
+
+    this.notify();
   }
 
   normalizeProgram(programData) {
