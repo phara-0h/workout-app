@@ -175,6 +175,21 @@ export default function TrackWorkoutView() {
 
   const renderExercise = (exercise, exIndex) => {
     const prescription = exercise.sessionType || exercise.prescription || '';
+    const previousSets = store.getPreviousSetsForExercise(exercise.name);
+
+    const previousSetsDisplay = previousSets
+      ? el('div', { className: 'px-6 py-3 bg-blue-50 border-b border-blue-100' },
+          el('p', { className: 'text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2' }, 'Last Workout'),
+          el('div', { className: 'flex gap-2 overflow-x-auto' },
+            ...previousSets.map((prevSet, idx) =>
+              el('div', { className: 'bg-white px-3 py-2 rounded border border-blue-200 text-xs whitespace-nowrap' },
+                el('div', { className: 'font-semibold text-blue-900' }, `Set ${idx + 1}`),
+                el('div', { className: 'text-gray-600' }, `${prevSet.weight} lbs × ${prevSet.reps}`)
+              )
+            )
+          )
+        )
+      : null;
 
     const card = el('div', { className: 'bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden' },
       el('div', { className: 'px-6 py-4 border-b border-gray-100 bg-gray-50' },
@@ -188,6 +203,7 @@ export default function TrackWorkoutView() {
             : null
         )
       ),
+      previousSetsDisplay,
       el('div', { className: 'px-6 py-4 space-y-3' },
         ...(exercise.sets.length === 0
           ? [el('p', { className: 'text-center text-sm text-gray-500 py-4 bg-gray-50 rounded-lg' }, 'No sets logged yet.')]

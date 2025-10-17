@@ -350,6 +350,26 @@ class WorkoutStore {
     this.notify();
   }
 
+  getPreviousSetsForExercise(exerciseName) {
+    const history = this.workoutHistory || [];
+
+    for (let i = history.length - 1; i >= 0; i--) {
+      const workout = history[i];
+      const exercise = (workout.exercises || []).find(ex => ex.name === exerciseName);
+
+      if (exercise && exercise.sets && exercise.sets.length > 0) {
+        return exercise.sets.map(set => ({
+          weight: set.weight || '—',
+          reps: set.reps || '—',
+          rpe: set.rpe || '—',
+          completed: set.completed || false
+        }));
+      }
+    }
+
+    return null;
+  }
+
   normalizeProgram(programData) {
     if (!programData || !Array.isArray(programData.days)) {
       return null;
