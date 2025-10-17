@@ -143,27 +143,6 @@ class WorkoutStore {
     await this.save({ persistProgram: false });
   }
 
-  startWorkout(dayKey) {
-    const day = this.program[dayKey];
-    const sessionIndex = this.getSessionType(this.currentWeek, parseInt(dayKey.replace('day', ''), 10));
-
-    this.activeWorkout = {
-      date: new Date().toISOString(),
-      week: this.currentWeek,
-      day: dayKey,
-      dayName: day.name,
-      exercises: day.exercises.map(ex => ({
-        name: ex.name,
-        type: ex.type,
-        sessionType: ex.rotation ? ex.rotation[sessionIndex] : `${ex.sets} @ ${ex.rpe}`,
-        sets: []
-      }))
-    };
-
-    this.view = 'workout';
-    this.notify();
-  }
-
   addWorkoutSet(exerciseIndex) {
     if (!this.activeWorkout) return;
     this.activeWorkout.exercises[exerciseIndex].sets.push({
