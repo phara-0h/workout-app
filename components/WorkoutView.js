@@ -1,140 +1,161 @@
 import { el } from '../utils.js';
 import { store } from '../store.js';
-import { HomeView } from './HomeView.js';
 
-export function WorkoutView() {
-  if (!store.activeWorkout) {
-    return HomeView();
+export default function WorkoutView() {
+  const programRecord = store.currentProgram;
+
+  if (!programRecord) {
+    window.location.hash = '#/';
+    return el('div');
+  }
+
+  const programData = programRecord.program_data || programRecord;
+  const days = programData.days || [];
+
+  if (days.length === 0) {
+    return el('div', { className: 'min-h-screen bg-gray-50 flex items-center justify-center p-4' },
+      el('div', { className: 'text-center bg-white shadow-sm rounded-xl p-8' },
+        el('h2', { className: 'text-xl font-semibold text-gray-900 mb-2' }, 'No Workout Days Found'),
+        el('p', { className: 'text-gray-600 mb-6' }, 'Your current program has no workout days.'),
+        el('button', {
+          className: 'px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700',
+          onClick: () => window.location.hash = '#/'
+        }, 'Go Back')
+      )
+    );
   }
 
   const container = el('div', { className: 'min-h-screen bg-gray-50 pb-20' });
 
-  const header = el('div', { className: 'bg-blue-600 text-white p-6 shadow-lg' },
-    el('h1', { className: 'text-2xl font-bold' }, store.activeWorkout.dayName),
-    el('p', { className: 'text-blue-100 mt-1' },
-      `Week ${store.currentWeek} • ${new Date(store.activeWorkout.date).toLocaleDateString()}`
-    )
-  );
+  const render = () => {
+    container.innerHTML = '';
 
-  const exercisesContainer = el('div', { className: 'p-4' });
-
-  store.activeWorkout.exercises.forEach((exercise, index) => {
-    const isExpanded = store.expandedExercise === index;
-    const history = store.getExerciseHistory(exercise.name).slice(0, 3);
-
-    const exerciseCard = el('div', { className: 'bg-white rounded-lg shadow-sm border border-gray-200 mb-3' });
-
-    const exerciseHeader = el('div', {
-      className: 'p-4 cursor-pointer',
-      onClick: () => store.toggleExercise(index)
-    },
-      el('div', { className: 'flex justify-between items-start' },
-        el('div', { className: 'flex-1' },
-          el('h3', { className: 'font-semibold text-gray-900' }, exercise.name),
-          el('p', { className: 'text-sm text-gray-600 mt-1' }, exercise.sessionType),
-          exercise.sets.length > 0 ? el('p', { className: 'text-xs text-green-600 mt-1' },
-            `${exercise.sets.length} set${exercise.sets.length > 1 ? 's' : ''} completed`
-          ) : null
-        ),
-        el('span', {}, isExpanded ? '▲' : '▼')
+    const header = el('div', { className: 'bg-white shadow-sm border-b sticky top-0 z-10' },
+      el('div', { className: 'max-w-4xl mx-auto px-4 py-4 flex items-center justify-between' },
+        el('button', {
+          className: 'text-gray-600 hover:text-gray-900 font-medium',
+          onClick: () => window.location.hash = '#/'
+        }, '← Back'),
+        el('h1', { className: 'text-xl font-bold text-gray-900' }, programData.name || 'My Program'),
+        el('div', { className: 'w-16' })
       )
     );
 
-    exerciseCard.appendChild(exerciseHeader);
-
-    if (isExpanded) {
-      const expandedSection = el('div', { className: 'px-4 pb-4 border-t border-gray-100' });
-
-      if (history.length > 0) {
-        const historyBox = el('div', { className: 'mt-3 mb-3 bg-blue-50 p-2 rounded' },
-          el('p', { className: 'text-xs font-semibold text-blue-900 mb-1' }, 'Last Sessions:')
-        );
-        history.forEach(session => {
-          const topSet = session.sets.reduce((max, set) =>
-            set.weight > max.weight ? set : max, session.sets[0]
-          );
-          historyBox.appendChild(
-            el('p', { className: 'text-xs text-blue-700' },
-              `Week ${session.week}: ${topSet.weight}lbs × ${topSet.reps} @ RPE ${topSet.rpe}`
-            )
-          );
-        });
-        expandedSection.appendChild(historyBox);
-      }
-
-      const setsContainer = el('div', { className: 'mt-3 space-y-2' });
-      exercise.sets.forEach((set, i) => {
-        const setRow = el('div', { className: 'flex justify-between items-center text-sm bg-gray-50 p-2 rounded' },
-          el('span', {}, `Set ${i + 1}: ${set.weight}lbs × ${set.reps} @ RPE ${set.rpe}`),
-          el('button', {
-            className: 'text-red-500 hover:text-red-700',
-            onClick: (e) => {
-              e.stopPropagation();
-              store.deleteSet(index, i);
+    const weekIndicator = el('div', { className: 'bg-indigo-50 border-b border-indigo-100 py-3' },
+      el('div', { className: 'max-w-4xl mx-auto px-4 flex items-center justify-between' },
+        el('button', {
+          className: 'text-indigo-600 hover:text-indigo-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed',
+          disabled: store.currentWeek === 1,
+          onClick: () => {
+            if (store.currentWeek > 1) {
+              store.currentWeek -= 1;
+              store.notify();
             }
-          }, '✕')
-        );
-        setsContainer.appendChild(setRow);
-      });
-      expandedSection.appendChild(setsContainer);
-
-      const inputContainer = el('div', { className: 'mt-4 grid grid-cols-3 gap-2' });
-      const weightInput = el('input', {
-        type: 'number',
-        placeholder: 'Weight',
-        className: 'px-3 py-2 border border-gray-300 rounded text-sm'
-      });
-      const repsInput = el('input', {
-        type: 'number',
-        placeholder: 'Reps',
-        className: 'px-3 py-2 border border-gray-300 rounded text-sm'
-      });
-      const rpeInput = el('input', {
-        type: 'number',
-        step: '0.5',
-        placeholder: 'RPE',
-        className: 'px-3 py-2 border border-gray-300 rounded text-sm'
-      });
-
-      inputContainer.appendChild(weightInput);
-      inputContainer.appendChild(repsInput);
-      inputContainer.appendChild(rpeInput);
-      expandedSection.appendChild(inputContainer);
-
-      const addButton = el('button', {
-        className: 'mt-2 w-full bg-blue-500 text-white py-2 rounded font-medium hover:bg-blue-600',
-        onClick: () => {
-          const weight = parseFloat(weightInput.value);
-          const reps = parseInt(repsInput.value, 10);
-          const rpe = parseFloat(rpeInput.value);
-          if (weight && reps && rpe) {
-            store.addSet(index, weight, reps, rpe);
-            repsInput.value = '';
-            rpeInput.value = '';
           }
-        }
-      }, 'Add Set');
-      expandedSection.appendChild(addButton);
+        }, '← Previous'),
+        el('span', { className: 'font-semibold text-indigo-900' }, `Week ${store.currentWeek}`),
+        el('button', {
+          className: 'text-indigo-600 hover:text-indigo-700 font-medium',
+          onClick: () => {
+            store.currentWeek += 1;
+            store.notify();
+          }
+        }, 'Next →')
+      )
+    );
 
-      exerciseCard.appendChild(expandedSection);
+    const daysList = el('div', { className: 'max-w-4xl mx-auto px-4 py-6 space-y-4' },
+      days.map((day, index) => renderDayCard(day, index))
+    );
+
+    container.appendChild(header);
+    container.appendChild(weekIndicator);
+    container.appendChild(daysList);
+  };
+
+  const renderDayCard = (day, dayIndex) => {
+    const hasMainLifts = (day.exercises || []).some((exercise) => exercise.is_main);
+
+    return el('div', {
+      className: 'bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow'
+    },
+      el('div', { className: 'bg-gradient-to-r from-indigo-500 to-indigo-600 px-6 py-4' },
+        el('h2', { className: 'text-xl font-bold text-white' }, day.name || `Day ${dayIndex + 1}`),
+        el('p', { className: 'text-indigo-100 text-sm mt-1' },
+          `${day.exercises?.length || 0} exercise${day.exercises?.length !== 1 ? 's' : ''}`
+        )
+      ),
+      el('div', { className: 'p-6 space-y-4' },
+        (!day.exercises || day.exercises.length === 0)
+          ? el('p', { className: 'text-center text-gray-500 py-4' }, 'No exercises in this day')
+          : day.exercises.map((exercise, exIndex) => renderExercise(exercise, exIndex, hasMainLifts))
+      ),
+      el('div', { className: 'px-6 pb-6' },
+        el('button', {
+          className: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors',
+          onClick: () => startWorkout(day, dayIndex)
+        }, `Start ${day.name || `Day ${dayIndex + 1}`} →`)
+      )
+    );
+  };
+
+  const renderExercise = (exercise) => {
+    let prescription = '';
+    if (exercise.is_main && Array.isArray(exercise.rotation) && exercise.rotation.length > 0) {
+      const weekIndex = (store.currentWeek - 1) % exercise.rotation.length;
+      prescription = exercise.rotation[weekIndex] || '';
+    } else {
+      prescription = `${exercise.sets || ''}${exercise.rpe ? ` @ ${exercise.rpe}` : ''}`.trim();
     }
 
-    exercisesContainer.appendChild(exerciseCard);
-  });
+    return el('div', {
+      className: `p-4 rounded-lg border-2 ${
+        exercise.is_main ? 'bg-indigo-50 border-indigo-200' : 'bg-gray-50 border-gray-200'
+      }`
+    },
+      el('div', { className: 'flex items-start justify-between' },
+        el('div', { className: 'flex-1' },
+          el('div', { className: 'flex items-center gap-2 mb-2' },
+            el('h3', { className: 'font-semibold text-gray-900' }, exercise.exercise_name || exercise.name || 'Exercise'),
+            exercise.is_main
+              ? el('span', { className: 'px-2 py-1 bg-indigo-600 text-white text-xs font-bold rounded uppercase' }, 'Main Lift')
+              : null
+          ),
+          el('p', { className: 'text-sm text-gray-700 font-medium' }, prescription || 'No prescription set')
+        )
+      )
+    );
+  };
 
-  const buttonContainer = el('div', { className: 'flex gap-3 mt-4' },
-    el('button', {
-      className: 'flex-1 bg-gray-500 text-white py-4 rounded-lg font-bold text-lg hover:bg-gray-600',
-      onClick: () => store.cancelWorkout()
-    }, 'Cancel'),
-    el('button', {
-      className: 'flex-1 bg-green-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-green-700',
-      onClick: () => store.finishWorkout()
-    }, 'Finish')
-  );
-  exercisesContainer.appendChild(buttonContainer);
+  const startWorkout = (day, dayIndex) => {
+    store.activeWorkout = {
+      date: new Date().toISOString(),
+      week: store.currentWeek,
+      dayIndex,
+      dayId: day.id,
+      dayName: day.name || `Day ${dayIndex + 1}`,
+      exercises: (day.exercises || []).map((exercise) => {
+        let sessionType = '';
+        if (exercise.is_main && Array.isArray(exercise.rotation) && exercise.rotation.length > 0) {
+          const weekIndex = (store.currentWeek - 1) % exercise.rotation.length;
+          sessionType = exercise.rotation[weekIndex] || '';
+        } else {
+          sessionType = `${exercise.sets || ''}${exercise.rpe ? ` @ ${exercise.rpe}` : ''}`.trim();
+        }
+        return {
+          name: exercise.exercise_name || exercise.name,
+          type: exercise.is_main ? 'main' : 'accessory',
+          sessionType,
+          sets: []
+        };
+      })
+    };
 
-  container.appendChild(header);
-  container.appendChild(exercisesContainer);
+    store.setView('track-workout');
+  };
+
+  store.subscribe(render);
+  render();
+
   return container;
 }
