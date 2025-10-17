@@ -7,6 +7,11 @@ export const el = (tag, props = {}, ...children) => {
       element.className = value;
     } else if (key.startsWith('on')) {
       element.addEventListener(key.substring(2).toLowerCase(), value);
+    } else if (key === 'disabled' || key === 'checked' || key === 'selected') {
+      // Boolean attributes should only be set if true
+      if (value) {
+        element.setAttribute(key, '');
+      }
     } else {
       element.setAttribute(key, value);
     }

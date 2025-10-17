@@ -32,14 +32,14 @@ export default function ProgramBuilderView() {
       ),
       el('div', { className: 'flex items-center gap-2 text-sm text-gray-500' },
         el('span', {}, 'Step'),
-        el('span', { className: 'font-semibold text-indigo-600' }, '0'),
+        el('span', { className: 'font-semibold text-indigo-600' }, state.step.toString()),
         el('span', {}, 'of 3')
       )
     )
   );
 
   const progressBar = el('div', { className: 'bg-gray-200 h-1' },
-    el('div', { className: 'h-1 bg-indigo-600 transition-all duration-300', style: 'width: 33%;' })
+    el('div', { className: 'h-1 bg-indigo-600 transition-all duration-300', style: `width: ${((state.step - 1) / 2) * 100}%;` })
   );
 
   const content = el('div', { className: 'max-w-4xl mx-auto w-full px-4 py-8 flex-1' });
@@ -53,15 +53,6 @@ export default function ProgramBuilderView() {
     { title: state.isEditing ? 'Review Workout Days' : 'Add Workout Days', description: 'Create the structure of your split by adding workout days.' },
     { title: state.isEditing ? 'Adjust Your Workouts' : 'Build Your Workouts', description: 'Add exercises and DUP rotations for each day.' }
   ];
-
-  const defaultExercise = () => ({
-    exercise_id: null,
-    exercise_name: 'New Exercise',
-    is_main: false,
-    rotation: null,
-    sets: '3x10-12',
-    rpe: 'RPE 7-8'
-  });
 
   const ensureCurrentDayIndex = () => {
     if (state.days.length === 0) {
@@ -302,7 +293,7 @@ export default function ProgramBuilderView() {
       el('div', { className: 'space-y-3' },
         currentDay.exercises.length === 0
           ? el('div', { className: 'border border-dashed border-gray-300 rounded-lg p-6 text-center text-gray-500' }, 'No exercises yet. Add one below.')
-          : el('div', { className: 'space-y-3' }, ...currentDay.exercises.map(renderExerciseCard))
+          : el('div', { className: 'space-y-3' }, ...currentDay.exercises.map((exercise, index) => renderExerciseCard(exercise, index)))
       ),
       el('button', {
         className: 'w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-indigo-400 hover:text-indigo-600 font-medium',
