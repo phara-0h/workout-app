@@ -5,7 +5,7 @@ export default function WorkoutView() {
   const programRecord = store.currentProgram;
 
   if (!programRecord) {
-    window.location.hash = '#/';
+    store.setView('home');
     return el('div');
   }
 
@@ -19,7 +19,7 @@ export default function WorkoutView() {
         el('p', { className: 'text-gray-600 mb-6' }, 'Your current program has no workout days.'),
         el('button', {
           className: 'px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700',
-          onClick: () => window.location.hash = '#/'
+          onClick: () => store.setView('home')
         }, 'Go Back')
       )
     );
@@ -34,7 +34,7 @@ export default function WorkoutView() {
       el('div', { className: 'max-w-4xl mx-auto px-4 py-4 flex items-center justify-between' },
         el('button', {
           className: 'text-gray-600 hover:text-gray-900 font-medium',
-          onClick: () => window.location.hash = '#/'
+          onClick: () => store.setView('home')
         }, '← Back'),
         el('h1', { className: 'text-xl font-bold text-gray-900' }, programData.name || 'My Program'),
         el('div', { className: 'w-16' })
@@ -74,8 +74,6 @@ export default function WorkoutView() {
   };
 
   const renderDayCard = (day, dayIndex) => {
-    const hasMainLifts = (day.exercises || []).some((exercise) => exercise.is_main);
-
     return el('div', {
       className: 'bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow'
     },
@@ -88,7 +86,7 @@ export default function WorkoutView() {
       el('div', { className: 'p-6 space-y-4' },
         (!day.exercises || day.exercises.length === 0)
           ? el('p', { className: 'text-center text-gray-500 py-4' }, 'No exercises in this day')
-          : day.exercises.map((exercise, exIndex) => renderExercise(exercise, exIndex, hasMainLifts))
+          : day.exercises.map((exercise) => renderExercise(exercise))
       ),
       el('div', { className: 'px-6 pb-6' },
         el('button', {
@@ -131,8 +129,11 @@ export default function WorkoutView() {
     store.activeWorkout = {
       date: new Date().toISOString(),
       week: store.currentWeek,
+      programId: store.currentProgramId || null,
+      programName: programData.name || 'My Program',
       dayIndex,
-      dayId: day.id,
+      dayId: day.id || day.dayKey || `day-${dayIndex + 1}`,
+      dayKey: day.id || day.dayKey || `day-${dayIndex + 1}`,
       dayName: day.name || `Day ${dayIndex + 1}`,
       exercises: (day.exercises || []).map((exercise) => {
         let sessionType = '';
@@ -143,10 +144,17 @@ export default function WorkoutView() {
           sessionType = `${exercise.sets || ''}${exercise.rpe ? ` @ ${exercise.rpe}` : ''}`.trim();
         }
         return {
+          exercise_id: exercise.exercise_id || exercise.id || null,
           name: exercise.exercise_name || exercise.name,
-          type: exercise.is_main ? 'main' : 'accessory',
+          is_main: Boolean(exercise.is_main || exercise.type === 'main'),
           sessionType,
-          sets: []
+          sets: [{
+            set_number: 1,
+            weight: '',
+            reps: '',
+            rpe: '',
+            completed: false
+          }]
         };
       })
     };

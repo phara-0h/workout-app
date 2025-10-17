@@ -5,6 +5,7 @@ import ExerciseConfigModal from './ExerciseConfigModal.js';
 
 export default function ProgramBuilderView() {
   const builder = store.programBuilder;
+  const isEditing = builder.isEditing;
 
   const container = el('div', { className: 'min-h-screen bg-gray-50 pb-20' });
 
@@ -16,9 +17,11 @@ export default function ProgramBuilderView() {
           onClick: () => store.setView('home')
         }, '← Back'),
         el('h1', { className: 'text-xl font-bold text-gray-900' },
-          builder.step === 1 ? 'Name Your Program' :
-          builder.step === 2 ? 'Add Workout Days' :
-          'Build Your Workouts'
+          builder.step === 1
+            ? (isEditing ? 'Update Program Name' : 'Name Your Program')
+            : builder.step === 2
+              ? (isEditing ? 'Review Workout Days' : 'Add Workout Days')
+              : (isEditing ? 'Adjust Your Workouts' : 'Build Your Workouts')
         )
       ),
       el('div', { className: 'text-sm text-gray-500' }, `Step ${builder.step} of 3`)
@@ -62,26 +65,28 @@ export default function ProgramBuilderView() {
         builder.step = 2;
         store.notify();
       }
-    }, 'Next: Add Workout Days →');
+    }, isEditing ? 'Next: Review Workout Days →' : 'Next: Add Workout Days →');
 
     const actions = el('div', { className: 'mt-6 flex justify-end' }, nextButton);
     card.appendChild(actions);
     stepContainer.appendChild(card);
 
-    const examples = el('div', { className: 'mt-8' });
-    examples.appendChild(el('h3', { className: 'text-sm font-medium text-gray-700 mb-3' }, 'Popular program examples:'));
-    const exampleGrid = el('div', { className: 'grid grid-cols-2 gap-3' });
-    ['Push/Pull/Legs', 'Upper/Lower', 'Full Body', 'Bro Split'].forEach((name) => {
-      exampleGrid.appendChild(el('button', {
-        className: 'p-3 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 text-sm text-left',
-        onClick: () => {
-          builder.programName = name;
-          store.notify();
-        }
-      }, name));
-    });
-    examples.appendChild(exampleGrid);
-    stepContainer.appendChild(examples);
+    if (!isEditing) {
+      const examples = el('div', { className: 'mt-8' });
+      examples.appendChild(el('h3', { className: 'text-sm font-medium text-gray-700 mb-3' }, 'Need ideas? Try one of these:'));
+      const exampleGrid = el('div', { className: 'grid grid-cols-2 gap-3' });
+      ['Push/Pull/Legs', 'Upper/Lower', 'Full Body', 'Bro Split'].forEach((name) => {
+        exampleGrid.appendChild(el('button', {
+          className: 'p-3 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 text-sm text-left',
+          onClick: () => {
+            builder.programName = name;
+            store.notify();
+          }
+        }, name));
+      });
+      examples.appendChild(exampleGrid);
+      stepContainer.appendChild(examples);
+    }
 
     return stepContainer;
   };
@@ -90,8 +95,8 @@ export default function ProgramBuilderView() {
     const stepContainer = el('div', { className: 'max-w-2xl mx-auto px-4 py-8' });
     const card = el('div', { className: 'bg-white rounded-xl shadow-sm p-8' });
 
-    card.appendChild(el('h2', { className: 'text-lg font-semibold text-gray-900 mb-4' }, 'Add Your Workout Days'));
-    card.appendChild(el('p', { className: 'text-sm text-gray-600 mb-6' }, 'Create as many workout days as you need for your program'));
+    card.appendChild(el('h2', { className: 'text-lg font-semibold text-gray-900 mb-4' }, isEditing ? 'Review Your Workout Days' : 'Add Your Workout Days'));
+    card.appendChild(el('p', { className: 'text-sm text-gray-600 mb-6' }, isEditing ? 'Rename, remove, or add new days to keep your split organized.' : 'Create as many workout days as you need for your program.'));
 
     const list = el('div', { className: 'space-y-3 mb-6' });
     if (builder.days.length === 0) {
@@ -160,7 +165,7 @@ export default function ProgramBuilderView() {
         builder.currentDayIndex = 0;
         store.notify();
       }
-    }, 'Next: Add Exercises →'));
+    }, isEditing ? 'Next: Update Exercises →' : 'Next: Add Exercises →'));
     card.appendChild(nav);
 
     stepContainer.appendChild(card);
@@ -313,14 +318,14 @@ export default function ProgramBuilderView() {
             };
             try {
               await store.saveCurrentProgram(programData);
-              alert('Program created successfully! 🎉');
+              alert(builder.isEditing ? 'Program updated successfully! 🎉' : 'Program created successfully! 🎉');
               store.setView('home');
             } catch (error) {
               console.error('Error saving program:', error);
               alert('Failed to save program. Please try again.');
             }
           }
-        }, '✓ Finish & Save Program');
+        }, builder.isEditing ? '✓ Update Program' : '✓ Finish & Save Program');
 
     nav.appendChild(finishButton);
     stepContainer.appendChild(nav);

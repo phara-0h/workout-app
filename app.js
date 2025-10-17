@@ -3,13 +3,14 @@ import { createAuthUI } from './auth.js';
 import { store } from './store.js';
 import { isDemoMode } from './utils.js';
 import { LoadingView } from './components/LoadingView.js';
-import { HomeView } from './components/HomeView.js';
-import { WorkoutView } from './components/WorkoutView.js';
-import { ProgressView } from './components/ProgressView.js';
+import HomeView from './components/HomeView.js';
+import WorkoutView from './components/WorkoutView.js';
+import ProgressView from './components/ProgressView.js';
 import { EditView } from './components/EditView.js';
 import { ExerciseLibraryView } from './components/ExerciseLibraryView.js';
 import ProgramBuilderView from './components/ProgramBuilderView.js';
 import EmptyStateView from './components/EmptyStateView.js';
+import TrackWorkoutView from './components/TrackWorkoutView.js';
 
 function render() {
   const root = document.getElementById('root');
@@ -46,6 +47,9 @@ function render() {
       break;
     case 'empty-state':
       view = EmptyStateView();
+      break;
+    case 'track-workout':
+      view = TrackWorkoutView();
       break;
     default:
       view = HomeView();

@@ -26,47 +26,66 @@ export async function getProgram() {
 }
 
 // Save a completed workout
-export async function saveWorkout(workout) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error('Not authenticated');
+export async function saveWorkout(workoutEntry) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
 
-  const { error } = await supabase
+  const payload = {
+    user_id: user.id,
+    date: workoutEntry.date,
+    week: workoutEntry.week,
+    day_key: workoutEntry.dayId || workoutEntry.dayKey,
+    day_name: workoutEntry.dayName,
+    workout_data: workoutEntry
+  };
+
+  const { data, error } = await supabase
     .from('workouts')
-    .insert({
-      user_id: user.id,
-      date: workout.date,
-      week: workout.week,
-      day_key: workout.day,
-      day_name: workout.dayName,
-      workout_data: {
-        exercises: workout.exercises
-      }
-    });
+    .insert([payload])
+    .select()
+    .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error saving workout:', error);
+    throw error;
+  }
+
+  return data;
 }
 
-// Get all workouts for the current user
-export async function getWorkouts() {
-  const user = await getCurrentUser();
+export async function getWorkoutHistory(limit = 20) {
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
   const { data, error } = await supabase
     .from('workouts')
     .select('*')
     .eq('user_id', user.id)
-    .order('date', { ascending: false });
+    .order('date', { ascending: false })
+    .limit(limit);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching workout history:', error);
+    return [];
+  }
 
-  // Transform database format back to app format
-  return data.map(w => ({
-    date: w.date,
-    week: w.week,
-    day: w.day_key,
-    dayName: w.day_name,
-    exercises: w.workout_data.exercises
-  }));
+  return data || [];
+}
+
+export async function deleteWorkout(workoutId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { error } = await supabase
+    .from('workouts')
+    .delete()
+    .eq('id', workoutId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Error deleting workout:', error);
+    throw error;
+  }
 }
 
 // Delete a workout

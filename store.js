@@ -2,7 +2,7 @@ import { defaultProgram } from './programData.js';
 import {
   saveProgram,
   saveWorkout,
-  getWorkouts,
+  getWorkoutHistory,
   saveCurrentWeek,
   getCurrentWeek,
   getActiveProgram,
@@ -29,7 +29,9 @@ class WorkoutStore {
       step: 1,
       programName: '',
       days: [],
-      currentDayIndex: null
+      currentDayIndex: null,
+      isEditing: false,
+      sourceProgramId: null
     };
   }
 
@@ -56,7 +58,6 @@ class WorkoutStore {
       if (saved) {
         const data = JSON.parse(saved);
         this.currentWeek = data.currentWeek || 1;
-        this.workoutHistory = data.history || [];
         if (!this.program && data.program) {
           this.program = data.program;
         }
@@ -64,21 +65,18 @@ class WorkoutStore {
       if (!this.program && this.currentProgram) {
         this.program = this.normalizeProgram(this.currentProgram);
       }
+      await this.loadWorkoutHistory();
     } else {
       try {
-        const [workouts, week] = await Promise.all([
-          getWorkouts(),
-          getCurrentWeek()
-        ]);
-
-        this.workoutHistory = workouts || [];
+        const week = await getCurrentWeek();
         this.currentWeek = week || 1;
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('Error loading current week:', error);
       }
       if (!this.program && this.currentProgram) {
         this.program = this.normalizeProgram(this.currentProgram);
       }
+      await this.loadWorkoutHistory();
     }
 
     if (!this.program) {
@@ -96,6 +94,7 @@ class WorkoutStore {
         program: this.program
       };
       localStorage.setItem('workoutData', JSON.stringify(payload));
+      localStorage.setItem('workout-history', JSON.stringify(this.workoutHistory));
 
       if (persistProgram) {
         const builderProgram = this.buildProgramDataFromCurrent();
@@ -165,24 +164,64 @@ class WorkoutStore {
     this.notify();
   }
 
-  addSet(exerciseIndex, weight, reps, rpe) {
-    this.activeWorkout.exercises[exerciseIndex].sets.push({ weight, reps, rpe });
+  addWorkoutSet(exerciseIndex) {
+    if (!this.activeWorkout) return;
+    this.activeWorkout.exercises[exerciseIndex].sets.push({
+      set_number: this.activeWorkout.exercises[exerciseIndex].sets.length + 1,
+      weight: '',
+      reps: '',
+      rpe: '',
+      completed: false
+    });
     this.notify();
   }
 
-  deleteSet(exerciseIndex, setIndex) {
-    this.activeWorkout.exercises[exerciseIndex].sets.splice(setIndex, 1);
+  updateWorkoutSet(exerciseIndex, setIndex, field, value) {
+    if (!this.activeWorkout) return;
+    const exercise = this.activeWorkout.exercises[exerciseIndex];
+    if (!exercise || !exercise.sets[setIndex]) return;
+    exercise.sets[setIndex][field] = value;
+    this.notify();
+  }
+
+  removeWorkoutSet(exerciseIndex, setIndex) {
+    if (!this.activeWorkout) return;
+    const exercise = this.activeWorkout.exercises[exerciseIndex];
+    if (!exercise || !exercise.sets[setIndex]) return;
+    exercise.sets.splice(setIndex, 1);
+    exercise.sets.forEach((set, idx) => {
+      set.set_number = idx + 1;
+    });
+    this.notify();
+  }
+
+  toggleWorkoutSetCompleted(exerciseIndex, setIndex) {
+    if (!this.activeWorkout) return;
+    const exercise = this.activeWorkout.exercises[exerciseIndex];
+    if (!exercise || !exercise.sets[setIndex]) return;
+    exercise.sets[setIndex].completed = !exercise.sets[setIndex].completed;
     this.notify();
   }
 
   async finishWorkout() {
+    if (!this.activeWorkout) {
+      return;
+    }
+
+    const workoutRecord = {
+      ...this.activeWorkout,
+      programId: this.currentProgramId || this.activeWorkout.programId || null,
+      completed_at: new Date().toISOString()
+    };
+
     if (isDemoMode) {
-      this.workoutHistory = [this.activeWorkout, ...this.workoutHistory];
+      const normalized = this.formatWorkoutEntry(workoutRecord);
+      this.workoutHistory = [normalized, ...this.workoutHistory];
       await this.save({ persistProgram: false });
     } else {
       try {
-        await saveWorkout(this.activeWorkout);
-        this.workoutHistory = await getWorkouts();
+        await saveWorkout(workoutRecord);
+        await this.loadWorkoutHistory();
       } catch (error) {
         console.error('Error saving workout:', error);
         alert('Failed to save workout. Please try again.');
@@ -199,7 +238,7 @@ class WorkoutStore {
   cancelWorkout() {
     this.activeWorkout = null;
     this.expandedExercise = null;
-    this.view = 'home';
+    this.view = 'workout';
     this.notify();
   }
 
@@ -293,7 +332,9 @@ class WorkoutStore {
       step: 1,
       programName: '',
       days: [],
-      currentDayIndex: null
+      currentDayIndex: null,
+      isEditing: false,
+      sourceProgramId: null
     };
   }
 
@@ -362,6 +403,104 @@ class WorkoutStore {
     };
   }
 
+  async loadWorkoutHistory() {
+    if (isDemoMode) {
+      try {
+        const storedHistory = localStorage.getItem('workout-history');
+        if (storedHistory) {
+          this.workoutHistory = this.normalizeHistoryList(JSON.parse(storedHistory));
+        } else if (Array.isArray(this.workoutHistory)) {
+          localStorage.setItem('workout-history', JSON.stringify(this.workoutHistory));
+        } else {
+          this.workoutHistory = [];
+        }
+      } catch (error) {
+        console.error('Error loading workout history from localStorage:', error);
+        this.workoutHistory = [];
+      }
+    } else {
+      try {
+        const history = await getWorkoutHistory();
+        this.workoutHistory = this.normalizeHistoryList(history);
+      } catch (error) {
+        console.error('Error loading workout history:', error);
+        this.workoutHistory = [];
+      }
+    }
+    this.notify();
+  }
+
+  async deleteWorkoutEntry(workoutId) {
+    if (!workoutId) return;
+    if (isDemoMode) {
+      this.workoutHistory = this.workoutHistory.filter((workout) => workout.id !== workoutId);
+      localStorage.setItem('workout-history', JSON.stringify(this.workoutHistory));
+      await this.save({ persistProgram: false });
+    } else {
+      try {
+        await deleteWorkout(workoutId);
+        await this.loadWorkoutHistory();
+      } catch (error) {
+        console.error('Error deleting workout:', error);
+        alert('Failed to delete workout. Please try again.');
+      }
+    }
+  }
+
+  startProgramEdit() {
+    if (!this.currentProgram) return;
+    const programData = this.currentProgram.program_data || this.currentProgram;
+    const clonedDays = JSON.parse(JSON.stringify(programData.days || []));
+    this.programBuilder = {
+      step: clonedDays.length > 0 ? 3 : 1,
+      programName: programData.name || '',
+      days: clonedDays,
+      currentDayIndex: 0,
+      isEditing: true,
+      sourceProgramId: this.currentProgramId || this.currentProgram.id || null
+    };
+    this.setView('program-builder');
+  }
+
+  normalizeHistoryList(list = []) {
+    return list
+      .map((entry) => this.formatWorkoutEntry(entry))
+      .filter(Boolean);
+  }
+
+  formatWorkoutEntry(entry) {
+    if (!entry) return null;
+
+    if (entry.workout_data) {
+      const data = entry.workout_data || {};
+      return {
+        id: entry.id,
+        dayId: entry.day_id || entry.day_key,
+        dayKey: entry.day_key || entry.day_id,
+        dayName: entry.day_name,
+        week: entry.week,
+        date: entry.workout_date || entry.date,
+        exercises: data.exercises || [],
+        programId: entry.program_id || data.programId || null,
+        completed_at: entry.completed_at || data.completed_at || entry.created_at || entry.date,
+        created_at: entry.created_at || entry.workout_date || entry.date
+      };
+    }
+
+    return {
+      id: entry.id || `local-${Date.now()}`,
+      dayId: entry.dayId || entry.day_id || entry.dayKey,
+      dayKey: entry.dayKey || entry.day_id || entry.dayId,
+      dayName: entry.dayName || entry.day_name,
+      week: entry.week,
+      date: entry.date,
+      exercises: entry.exercises || [],
+      programId: entry.programId || null,
+      completed_at: entry.completed_at || entry.date,
+      created_at: entry.created_at || entry.completed_at || entry.date
+    };
+  }
+
   getSessionType(week, dayNum) {
     if (dayNum === 3) {
       return week % 2 === 1 ? 0 : 1;
@@ -374,10 +513,16 @@ class WorkoutStore {
     this.workoutHistory.forEach(workout => {
       const exercise = workout.exercises.find(ex => ex.name === exerciseName);
       if (exercise && exercise.sets.length > 0) {
+        const sanitizedSets = exercise.sets.map(set => ({
+          weight: Number(set.weight) || 0,
+          reps: Number(set.reps) || 0,
+          rpe: set.rpe === '' || set.rpe === null || set.rpe === undefined ? null : Number(set.rpe),
+          completed: Boolean(set.completed)
+        }));
         history.push({
           date: workout.date,
           week: workout.week,
-          sets: exercise.sets
+          sets: sanitizedSets
         });
       }
     });
@@ -393,7 +538,8 @@ class WorkoutStore {
       let max = 0;
       history.forEach(session => {
         session.sets.forEach(set => {
-          if (set.weight > max) max = set.weight;
+          const weight = Number(set.weight);
+          if (Number.isFinite(weight) && weight > max) max = weight;
         });
       });
       return max;
@@ -403,7 +549,12 @@ class WorkoutStore {
       let best = 0;
       history.forEach(session => {
         session.sets.forEach(set => {
-          const estimated = set.weight * (1 + set.reps / 30);
+          const weight = Number(set.weight);
+          const reps = Number(set.reps);
+          if (!Number.isFinite(weight) || !Number.isFinite(reps) || weight <= 0 || reps <= 0) {
+            return;
+          }
+          const estimated = weight * (1 + reps / 30);
           if (estimated > best) best = estimated;
         });
       });
