@@ -102,12 +102,7 @@ export default function ProgramBuilderView() {
             ? 'px-6 py-3 rounded-lg font-semibold bg-indigo-600 hover:bg-indigo-700 text-white'
             : 'px-6 py-3 rounded-lg font-semibold bg-gray-300 text-gray-500 cursor-not-allowed',
           disabled: !state.programName.trim(),
-          onClick: () => {
-            console.log('Button clicked! Current step:', state.step);
-            console.log('Program name:', state.programName);
-            goToStep(2);
-            console.log('After goToStep, step is:', state.step);
-          }
+          onClick: () => goToStep(2)
         }, state.isEditing ? 'Next: Review Workout Days →' : 'Next: Add Workout Days →')
       )
     );

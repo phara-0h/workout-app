@@ -74,6 +74,12 @@ export default function WorkoutView() {
   };
 
   const renderDayCard = (day, dayIndex) => {
+    const exerciseContainer = (!day.exercises || day.exercises.length === 0)
+      ? el('p', { className: 'text-center text-gray-500 py-4' }, 'No exercises in this day')
+      : el('div', { className: 'space-y-4' },
+          ...day.exercises.map((exercise) => renderExercise(exercise))
+        );
+
     return el('div', {
       className: 'bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow'
     },
@@ -83,11 +89,7 @@ export default function WorkoutView() {
           `${day.exercises?.length || 0} exercise${day.exercises?.length !== 1 ? 's' : ''}`
         )
       ),
-      el('div', { className: 'p-6 space-y-4' },
-        (!day.exercises || day.exercises.length === 0)
-          ? el('p', { className: 'text-center text-gray-500 py-4' }, 'No exercises in this day')
-          : day.exercises.map((exercise) => renderExercise(exercise))
-      ),
+      el('div', { className: 'p-6' }, exerciseContainer),
       el('div', { className: 'px-6 pb-6' },
         el('button', {
           className: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors',
