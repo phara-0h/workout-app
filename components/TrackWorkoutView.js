@@ -53,12 +53,17 @@ export default function TrackWorkoutView() {
 
   const container = el('div', { className: 'min-h-screen bg-gray-50 pb-24' });
 
+  let isNavigating = false;
+
   const render = () => {
     workout = store.activeWorkout;
 
     if (!workout) {
       stopRestTimer();
-      store.setView('workout');
+      if (!isNavigating) {
+        isNavigating = true;
+        store.setView('workout');
+      }
       return;
     }
 
@@ -185,9 +190,9 @@ export default function TrackWorkoutView() {
         )
       ),
       el('div', { className: 'px-6 py-4 space-y-3' },
-        exercise.sets.length === 0
-          ? el('p', { className: 'text-center text-sm text-gray-500 py-4 bg-gray-50 rounded-lg' }, 'No sets logged yet.')
-          : exercise.sets.map((set, setIndex) => renderSetRow(set, exIndex, setIndex)),
+        ...(exercise.sets.length === 0
+          ? [el('p', { className: 'text-center text-sm text-gray-500 py-4 bg-gray-50 rounded-lg' }, 'No sets logged yet.')]
+          : exercise.sets.map((set, setIndex) => renderSetRow(set, exIndex, setIndex))),
         el('button', {
           className: 'w-full mt-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold py-2 rounded-lg border border-indigo-100',
           onClick: () => store.addWorkoutSet(exIndex)
@@ -260,7 +265,9 @@ export default function TrackWorkoutView() {
   };
 
   const handleStoreChange = () => {
-    render();
+    if (!isNavigating) {
+      render();
+    }
   };
 
   store.subscribe(handleStoreChange);

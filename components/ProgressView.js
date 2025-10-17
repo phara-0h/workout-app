@@ -163,7 +163,7 @@ export default function ProgressView() {
     const big3Section = el('div', { className: 'max-w-5xl mx-auto px-4' },
       el('h2', { className: 'text-lg font-semibold text-gray-900 mb-3' }, 'Big 3 Highlights'),
       el('div', { className: 'grid gap-4 sm:grid-cols-3' },
-        [
+        ...[
           { label: 'Squat', data: big3.squat },
           { label: 'Bench Press', data: big3.bench },
           { label: 'Deadlift', data: big3.deadlift }
@@ -188,7 +188,7 @@ export default function ProgressView() {
             'No workouts logged yet. Start your first session to see progress here!'
           )
         : el('div', { className: 'space-y-4' },
-            history.map(renderHistoryCard)
+            ...history.map(renderHistoryCard)
           )
     );
 
