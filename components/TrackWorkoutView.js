@@ -176,7 +176,25 @@ export default function TrackWorkoutView() {
       )
     );
 
-    const exerciseCards = exercises.map((exercise, exIndex) => renderExercise(exercise, exIndex));
+    const exerciseCards = [];
+    exercises.forEach((exercise, exIndex) => {
+      const nextExercise = exercises[exIndex + 1];
+      const isInSuperset = exercise.superset_group;
+      const isLastInSuperset = isInSuperset && (!nextExercise || nextExercise.superset_group !== exercise.superset_group);
+
+      exerciseCards.push(renderExercise(exercise, exIndex));
+
+      // Add superset connector
+      if (isInSuperset && !isLastInSuperset) {
+        exerciseCards.push(
+          el('div', { className: 'flex items-center justify-center -my-2 relative z-10' },
+            el('div', { className: 'bg-purple-100 text-purple-700 px-4 py-1 rounded-full text-xs font-semibold border-2 border-purple-400' },
+              `⛓️ SUPERSET ${exercise.superset_group}`
+            )
+          )
+        );
+      }
+    });
     const exercisesList = el('div', { className: 'max-w-4xl mx-auto px-4 pb-24 space-y-4' }, ...exerciseCards);
 
     const actionBar = el('div', {
@@ -233,12 +251,18 @@ export default function TrackWorkoutView() {
         )
       : null;
 
-    const card = el('div', { className: 'bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden' },
+    const borderColor = exercise.superset_group ? 'border-purple-400 border-2' : 'border-gray-200';
+    const card = el('div', { className: `bg-white ${borderColor} rounded-2xl shadow-sm overflow-hidden` },
       el('div', { className: 'px-6 py-4 border-b border-gray-100 bg-gray-50' },
         el('div', { className: 'flex items-center justify-between' },
           el('div', {},
-            el('h2', { className: 'text-lg font-semibold text-gray-900' }, exercise.name),
-            el('p', { className: 'text-sm text-gray-500 mt-1' }, prescription || 'No prescription set')
+            el('div', { className: 'flex items-center gap-2 mb-1' },
+              el('h2', { className: 'text-lg font-semibold text-gray-900' }, exercise.name),
+              exercise.superset_group
+                ? el('span', { className: 'px-2 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded' }, `SS${exercise.superset_group}`)
+                : null
+            ),
+            el('p', { className: 'text-sm text-gray-500' }, prescription || 'No prescription set')
           ),
           exercise.is_main
             ? el('span', { className: 'px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full uppercase' }, 'Main Lift')

@@ -566,6 +566,11 @@ class WorkoutStore {
           base.rpe = exercise.rpe || '';
         }
 
+        // Preserve superset_group if it exists
+        if (exercise.superset_group) {
+          base.superset_group = exercise.superset_group;
+        }
+
         return base;
       });
 
@@ -589,14 +594,23 @@ class WorkoutStore {
       return {
         id: day.id || `day-${index + 1}`,
         name: day.name || `Day ${index + 1}`,
-        exercises: (day.exercises || []).map((exercise) => ({
-          exercise_id: exercise.exercise_id || null,
-          exercise_name: exercise.name,
-          is_main: exercise.type === 'main',
-          rotation: exercise.type === 'main' ? (exercise.rotation || []) : null,
-          sets: exercise.type !== 'main' ? (exercise.sets || '') : null,
-          rpe: exercise.type !== 'main' ? (exercise.rpe || '') : null
-        }))
+        exercises: (day.exercises || []).map((exercise) => {
+          const exerciseData = {
+            exercise_id: exercise.exercise_id || null,
+            exercise_name: exercise.name,
+            is_main: exercise.type === 'main',
+            rotation: exercise.type === 'main' ? (exercise.rotation || []) : null,
+            sets: exercise.type !== 'main' ? (exercise.sets || '') : null,
+            rpe: exercise.type !== 'main' ? (exercise.rpe || '') : null
+          };
+
+          // Preserve superset_group if it exists
+          if (exercise.superset_group) {
+            exerciseData.superset_group = exercise.superset_group;
+          }
+
+          return exerciseData;
+        })
       };
     });
 

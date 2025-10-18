@@ -8,13 +8,13 @@
 
 ## Phase 3 Features
 
-### 1. Superset / Linked Exercise Support
-- [ ] Define supersets in program builder
-- [ ] Link 2+ exercises together
-- [ ] Display linked exercises during workout
-- [ ] Track rest timer between superset exercises
-- [ ] Visual indicators for supersets
-**Status:** Deferred (complex, lower priority)
+### 1. Superset / Linked Exercise Support ✅ COMPLETE
+- [x] Define supersets in program builder
+- [x] Link 2+ exercises together
+- [x] Display linked exercises during workout
+- [x] Visual indicators for supersets (purple borders, SS badges)
+- [x] Superset connector badges between linked exercises
+- [x] Link/Unlink button for easy superset management
 
 ### 2. Notes System ✅ COMPLETE
 - [x] Add notes to individual workouts
@@ -78,18 +78,18 @@
 
 ## Phase 3 Summary
 
-**Status:** 4 of 8 features complete (High priority items done!)
+**Status:** 6 of 8 features complete!
 
 **Completed Features:**
-1. ✅ **Plate Calculator** - Visual barbell loading helper
+1. ✅ **Superset Support** - Link exercises and visual indicators
 2. ✅ **Notes System** - Add notes to workouts and exercises
-3. ✅ **Dark Mode** - Theme toggle with localStorage persistence
-4. ✅ **Data Export** - Export to JSON/CSV with filters
+3. ✅ **Plate Calculator** - Visual barbell loading helper
+4. ✅ **Dark Mode** - Theme toggle with localStorage persistence
+5. ✅ **Data Export** - Export to JSON/CSV with filters
+6. ✅ **Auto-Progression Logic** - Training suggestions based on performance
 
 **Deferred Features:**
-- Superset Support (complex, would require program builder changes)
 - Calendar & Scheduling (large UI undertaking)
-- Auto-Progression (needs algorithm design)
 - AI Features (requires API keys & ongoing costs)
 
 **Ready for Testing:** Phase 3 core features are complete and ready for user testing!

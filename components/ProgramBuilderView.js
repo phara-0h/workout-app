@@ -206,13 +206,20 @@ export default function ProgramBuilderView() {
   };
 
   const renderExerciseCard = (exercise, index) => {
-    return el('div', { className: 'p-4 bg-gray-50 rounded-lg border border-gray-200' },
+    const currentDay = state.days[state.currentDayIndex];
+    const supersetGroup = exercise.superset_group;
+    const borderColor = supersetGroup ? 'border-purple-400 border-2' : 'border-gray-200';
+
+    return el('div', { className: `p-4 bg-gray-50 rounded-lg border ${borderColor}` },
       el('div', { className: 'flex items-start justify-between' },
         el('div', { className: 'flex-1' },
           el('div', { className: 'flex items-center gap-2 mb-2' },
             el('h3', { className: 'font-semibold text-gray-900' }, exercise.exercise_name),
             exercise.is_main
               ? el('span', { className: 'px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded' }, 'MAIN LIFT')
+              : null,
+            supersetGroup
+              ? el('span', { className: 'px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded' }, `SS${supersetGroup}`)
               : null
           ),
           exercise.is_main && Array.isArray(exercise.rotation)
@@ -222,14 +229,36 @@ export default function ProgramBuilderView() {
               )
             : el('p', { className: 'text-sm text-gray-600' }, `${exercise.sets} @ ${exercise.rpe}`)
         ),
-        el('button', {
-          className: 'text-red-500 hover:text-red-700 ml-4',
-          onClick: () => {
-            const day = state.days[state.currentDayIndex];
-            day.exercises.splice(index, 1);
-            render();
-          }
-        }, '🗑️')
+        el('div', { className: 'flex items-center gap-2' },
+          !exercise.is_main && index > 0
+            ? el('button', {
+                className: 'text-purple-600 hover:text-purple-800 text-sm font-medium',
+                onClick: () => {
+                  const prevExercise = currentDay.exercises[index - 1];
+                  if (!exercise.superset_group && !prevExercise.superset_group) {
+                    // Create new superset group
+                    const maxGroup = Math.max(0, ...currentDay.exercises.map(e => e.superset_group || 0));
+                    prevExercise.superset_group = maxGroup + 1;
+                    exercise.superset_group = maxGroup + 1;
+                  } else if (prevExercise.superset_group && !exercise.superset_group) {
+                    // Add to existing superset
+                    exercise.superset_group = prevExercise.superset_group;
+                  } else if (exercise.superset_group) {
+                    // Remove from superset
+                    delete exercise.superset_group;
+                  }
+                  render();
+                }
+              }, supersetGroup ? '⛓️‍💥 Unlink' : '⛓️ Link')
+            : null,
+          el('button', {
+            className: 'text-red-500 hover:text-red-700',
+            onClick: () => {
+              currentDay.exercises.splice(index, 1);
+              render();
+            }
+          }, '🗑️')
+        )
       )
     );
   };
