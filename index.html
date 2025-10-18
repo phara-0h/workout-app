@@ -10,8 +10,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
 </head>
-<body>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors">
     <div id="root"></div>
     <script type="module" src="app.js"></script>
 </body>

@@ -2,6 +2,7 @@ import { supabase } from './supabase.js';
 import { createAuthUI } from './auth.js';
 import { store } from './store.js';
 import { isDemoMode } from './utils.js';
+import { themeManager } from './theme.js';
 import { LoadingView } from './components/LoadingView.js';
 import HomeView from './components/HomeView.js';
 import WorkoutView from './components/WorkoutView.js';
@@ -68,6 +69,7 @@ supabase.auth.onAuthStateChange((event) => {
   }
 });
 
+themeManager.init();
 store.subscribe(render);
 render();
 store.init();

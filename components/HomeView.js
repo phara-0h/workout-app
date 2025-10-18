@@ -1,5 +1,6 @@
 import { el } from '../utils.js';
 import { store } from '../store.js';
+import { themeManager } from '../theme.js';
 import EmptyStateView from './EmptyStateView.js';
 
 export default function HomeView() {
@@ -10,12 +11,22 @@ export default function HomeView() {
   const programData = store.currentProgram.program_data || store.currentProgram;
   const dayCount = programData.days?.length || 0;
 
-  const container = el('div', { className: 'min-h-screen bg-gray-50 pb-20' });
+  const container = el('div', { className: 'min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 transition-colors' });
 
-  const header = el('div', { className: 'bg-white shadow-sm border-b' },
-    el('div', { className: 'max-w-4xl mx-auto px-4 py-6' },
-      el('h1', { className: 'text-2xl font-bold text-gray-900 mb-2' }, programData.name || 'My Program'),
-      el('p', { className: 'text-gray-600' }, `${dayCount} workout day${dayCount === 1 ? '' : 's'}`)
+  const header = el('div', { className: 'bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors' },
+    el('div', { className: 'max-w-4xl mx-auto px-4 py-6 flex items-center justify-between' },
+      el('div', {},
+        el('h1', { className: 'text-2xl font-bold text-gray-900 dark:text-white mb-2' }, programData.name || 'My Program'),
+        el('p', { className: 'text-gray-600 dark:text-gray-300' }, `${dayCount} workout day${dayCount === 1 ? '' : 's'}`)
+      ),
+      el('button', {
+        className: 'px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors',
+        onClick: () => {
+          themeManager.toggle();
+          // Force re-render to update button text
+          container.querySelector('button').textContent = themeManager.isDark() ? '☀️ Light' : '🌙 Dark';
+        }
+      }, themeManager.isDark() ? '☀️ Light' : '🌙 Dark')
     )
   );
   container.appendChild(header);
