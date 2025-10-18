@@ -193,6 +193,46 @@ export default function ProgressView() {
       )
     );
 
+    const suggestions = store.getProgressionSuggestions();
+    const suggestionIcons = {
+      increase_weight: '📈',
+      deload: '⚠️',
+      reduce_volume: '⬇️',
+      progress: '🎉'
+    };
+
+    const suggestionSection = suggestions.length > 0
+      ? el('div', { className: 'max-w-5xl mx-auto px-4 py-6' },
+          el('h2', { className: 'text-lg font-semibold text-gray-900 mb-3' }, '💡 Training Suggestions'),
+          el('div', { className: 'space-y-3' },
+            ...suggestions.slice(0, 5).map(suggestion =>
+              el('div', {
+                className: `bg-white border-l-4 ${
+                  suggestion.priority === 'high' ? 'border-orange-500' :
+                  suggestion.priority === 'medium' ? 'border-blue-500' :
+                  'border-green-500'
+                } rounded-lg p-4 shadow-sm`
+              },
+                el('div', { className: 'flex items-start gap-3' },
+                  el('span', { className: 'text-2xl' }, suggestionIcons[suggestion.type] || '📊'),
+                  el('div', { className: 'flex-1' },
+                    el('p', { className: 'font-semibold text-gray-900' }, suggestion.message),
+                    el('p', { className: 'text-sm text-gray-600 mt-1' }, suggestion.detail),
+                    el('span', {
+                      className: `inline-block mt-2 px-2 py-1 text-xs font-semibold rounded ${
+                        suggestion.priority === 'high' ? 'bg-orange-100 text-orange-700' :
+                        suggestion.priority === 'medium' ? 'bg-blue-100 text-blue-700' :
+                        'bg-green-100 text-green-700'
+                      }`
+                    }, suggestion.priority.toUpperCase())
+                  )
+                )
+              )
+            )
+          )
+        )
+      : null;
+
     const volumeTrend = store.getVolumeTrend(10);
     const maxVolume = Math.max(...volumeTrend.map(w => w.volume), 1);
 
@@ -362,6 +402,7 @@ export default function ProgressView() {
     container.appendChild(header);
     container.appendChild(summaryGrid);
     container.appendChild(big3Section);
+    if (suggestionSection) container.appendChild(suggestionSection);
     if (volumeTrendSection) container.appendChild(volumeTrendSection);
     if (prSection) container.appendChild(prSection);
     container.appendChild(historySection);

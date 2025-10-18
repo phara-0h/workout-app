@@ -453,6 +453,74 @@ class WorkoutStore {
     });
   }
 
+  getProgressionSuggestions() {
+    const history = this.workoutHistory || [];
+    const suggestions = [];
+
+    const exerciseHistory = {};
+    history.forEach(workout => {
+      (workout.exercises || []).forEach(exercise => {
+        const name = exercise.name;
+        if (!exerciseHistory[name]) exerciseHistory[name] = [];
+
+        const avgWeight = exercise.sets.reduce((sum, set) => sum + (Number(set.weight) || 0), 0) / (exercise.sets.length || 1);
+        const avgReps = exercise.sets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0) / (exercise.sets.length || 1);
+        const avgRPE = exercise.sets.reduce((sum, set) => sum + (Number(set.rpe) || 0), 0) / (exercise.sets.length || 1);
+        const completedSets = exercise.sets.filter(s => s.completed).length;
+
+        exerciseHistory[name].push({
+          date: workout.date,
+          avgWeight,
+          avgReps,
+          avgRPE,
+          completionRate: completedSets / (exercise.sets.length || 1)
+        });
+      });
+    });
+
+    Object.entries(exerciseHistory).forEach(([exerciseName, sessions]) => {
+      if (sessions.length < 2) return;
+
+      const recent = sessions.slice(-4);
+      const avgRPE = recent.reduce((sum, s) => sum + s.avgRPE, 0) / recent.length;
+      const last = recent[recent.length - 1];
+
+      if (avgRPE > 0 && avgRPE < 7 && last.completionRate >= 0.8) {
+        suggestions.push({
+          type: 'increase_weight',
+          exercise: exerciseName,
+          priority: 'high',
+          message: `${exerciseName}: RPE ${avgRPE.toFixed(1)} - add 5-10 lbs`,
+          detail: `You're completing sets with low RPE. Ready for more challenge.`
+        });
+      }
+
+      if (avgRPE >= 9 && recent.length >= 2) {
+        suggestions.push({
+          type: 'deload',
+          exercise: exerciseName,
+          priority: 'high',
+          message: `${exerciseName}: RPE ${avgRPE.toFixed(1)} too high - deload`,
+          detail: `Reduce weight by 10% for 1-2 weeks to recover.`
+        });
+      }
+
+      const avgCompletion = recent.reduce((sum, s) => sum + s.completionRate, 0) / recent.length;
+      if (avgCompletion < 0.7) {
+        suggestions.push({
+          type: 'reduce_volume',
+          exercise: exerciseName,
+          priority: 'medium',
+          message: `${exerciseName}: ${(avgCompletion * 100).toFixed(0)}% completion`,
+          detail: `Consider reducing weight or dropping a set.`
+        });
+      }
+    });
+
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    return suggestions.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+  }
+
   setNote(key, noteText) {
     if (noteText && noteText.trim()) {
       this.notes[key] = noteText.trim();
