@@ -429,6 +429,29 @@ class WorkoutStore {
     return Object.values(records).sort((a, b) => b.maxWeight - a.maxWeight);
   }
 
+  getVolumeTrend(limit = 10) {
+    const history = this.workoutHistory || [];
+    const recentWorkouts = history.slice(-limit).reverse();
+
+    return recentWorkouts.map(workout => {
+      let totalVolume = 0;
+      (workout.exercises || []).forEach(exercise => {
+        (exercise.sets || []).forEach(set => {
+          const weight = Number(set.weight) || 0;
+          const reps = Number(set.reps) || 0;
+          totalVolume += weight * reps;
+        });
+      });
+
+      return {
+        date: workout.date,
+        dayName: workout.dayName,
+        volume: totalVolume,
+        week: workout.week
+      };
+    });
+  }
+
   normalizeProgram(programData) {
     if (!programData || !Array.isArray(programData.days)) {
       return null;

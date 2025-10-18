@@ -178,6 +178,40 @@ export default function ProgressView() {
       )
     );
 
+    const volumeTrend = store.getVolumeTrend(10);
+    const maxVolume = Math.max(...volumeTrend.map(w => w.volume), 1);
+
+    const volumeTrendSection = volumeTrend.length > 0
+      ? el('div', { className: 'max-w-5xl mx-auto px-4 py-6' },
+          el('h2', { className: 'text-lg font-semibold text-gray-900 mb-3' }, 'Volume Trend (Last 10 Workouts)'),
+          el('div', { className: 'bg-white border border-gray-200 rounded-xl p-6' },
+            el('div', { className: 'space-y-3' },
+              ...volumeTrend.map(workout => {
+                const percentage = (workout.volume / maxVolume) * 100;
+                return el('div', { className: 'flex items-center gap-3' },
+                  el('div', { className: 'w-32 text-sm text-gray-600 truncate' },
+                    `${workout.dayName || 'Workout'}`
+                  ),
+                  el('div', { className: 'flex-1 bg-gray-100 rounded-full h-6 overflow-hidden' },
+                    el('div', {
+                      className: 'bg-gradient-to-r from-indigo-500 to-purple-500 h-full flex items-center justify-end px-2 transition-all',
+                      style: `width: ${percentage}%`
+                    },
+                      el('span', { className: 'text-xs font-semibold text-white' },
+                        percentage > 20 ? `${Math.round(workout.volume)} lbs` : ''
+                      )
+                    )
+                  ),
+                  el('div', { className: 'w-24 text-xs text-gray-500' },
+                    percentage <= 20 ? `${Math.round(workout.volume)} lbs` : `W${workout.week || '?'}`
+                  )
+                );
+              })
+            )
+          )
+        )
+      : null;
+
     const personalRecords = store.getAllPersonalRecords();
     const topPRs = personalRecords.slice(0, 5);
 
@@ -233,6 +267,7 @@ export default function ProgressView() {
     container.appendChild(header);
     container.appendChild(summaryGrid);
     container.appendChild(big3Section);
+    if (volumeTrendSection) container.appendChild(volumeTrendSection);
     if (prSection) container.appendChild(prSection);
     container.appendChild(historySection);
   };
