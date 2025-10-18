@@ -1,5 +1,6 @@
 import { el } from '../utils.js';
 import { store } from '../store.js';
+import DataExport from './DataExport.js';
 
 export default function ProgressView() {
   const container = el('div', { className: 'min-h-screen bg-gray-50 pb-24' });
@@ -137,10 +138,21 @@ export default function ProgressView() {
           el('h1', { className: 'text-2xl font-bold' }, 'Progress Overview'),
           el('p', { className: 'text-indigo-100 text-sm mt-1' }, 'Track your recent workouts and long-term performance trends.')
         ),
-        el('button', {
-          className: 'bg-indigo-500 hover:bg-indigo-400 text-white font-semibold px-4 py-2 rounded-lg',
-          onClick: () => store.setView('home')
-        }, '← Home')
+        el('div', { className: 'flex gap-2' },
+          el('button', {
+            className: 'bg-indigo-500 hover:bg-indigo-400 text-white font-semibold px-4 py-2 rounded-lg',
+            onClick: () => {
+              const exportModal = DataExport(() => {
+                document.body.removeChild(exportModal);
+              });
+              document.body.appendChild(exportModal);
+            }
+          }, '📊 Export'),
+          el('button', {
+            className: 'bg-indigo-500 hover:bg-indigo-400 text-white font-semibold px-4 py-2 rounded-lg',
+            onClick: () => store.setView('home')
+          }, '← Home')
+        )
       )
     );
 
