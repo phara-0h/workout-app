@@ -25,6 +25,7 @@ class WorkoutStore {
     this.exerciseLibrary = [];
     this.currentProgram = null;
     this.currentProgramId = null;
+    this.notes = {}; // { workoutId: 'note text', 'day-dayId': 'note', 'exercise-exerciseName': 'note' }
     this.programBuilder = {
       step: 1,
       programName: '',
@@ -450,6 +451,26 @@ class WorkoutStore {
         week: workout.week
       };
     });
+  }
+
+  setNote(key, noteText) {
+    if (noteText && noteText.trim()) {
+      this.notes[key] = noteText.trim();
+    } else {
+      delete this.notes[key];
+    }
+    this.save();
+    this.notify();
+  }
+
+  getNote(key) {
+    return this.notes[key] || '';
+  }
+
+  deleteNote(key) {
+    delete this.notes[key];
+    this.save();
+    this.notify();
   }
 
   normalizeProgram(programData) {

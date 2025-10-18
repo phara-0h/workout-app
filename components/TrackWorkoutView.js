@@ -150,6 +150,32 @@ export default function TrackWorkoutView() {
       )
     );
 
+    const workoutNotes = el('div', { className: 'max-w-4xl mx-auto px-4 py-4' },
+      el('div', { className: 'bg-white border border-gray-200 rounded-xl p-4' },
+        el('div', { className: 'flex items-center gap-2 mb-2' },
+          el('span', { className: 'text-sm font-semibold text-gray-700' }, '📝 Workout Notes'),
+          store.getNote(`workout-temp`)
+            ? el('button', {
+                className: 'text-xs text-red-500 hover:text-red-700',
+                onClick: () => {
+                  store.deleteNote(`workout-temp`);
+                  render();
+                }
+              }, 'Clear')
+            : null
+        ),
+        el('textarea', {
+          placeholder: 'Add notes for this workout...',
+          className: 'w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+          rows: '3',
+          value: store.getNote(`workout-temp`),
+          onInput: (e) => {
+            store.setNote(`workout-temp`, e.target.value);
+          }
+        })
+      )
+    );
+
     const exerciseCards = exercises.map((exercise, exIndex) => renderExercise(exercise, exIndex));
     const exercisesList = el('div', { className: 'max-w-4xl mx-auto px-4 pb-24 space-y-4' }, ...exerciseCards);
 
@@ -183,6 +209,7 @@ export default function TrackWorkoutView() {
 
     container.appendChild(header);
     container.appendChild(summary);
+    container.appendChild(workoutNotes);
     container.appendChild(exercisesList);
     container.appendChild(actionBar);
     updateRestDisplay();
@@ -227,6 +254,29 @@ export default function TrackWorkoutView() {
           className: 'w-full mt-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold py-2 rounded-lg border border-indigo-100',
           onClick: () => store.addWorkoutSet(exIndex)
         }, '+ Add Set')
+      ),
+      el('div', { className: 'px-6 py-3 border-t border-gray-100' },
+        el('div', { className: 'flex items-center gap-2 mb-2' },
+          el('span', { className: 'text-xs font-semibold text-gray-600 uppercase tracking-wide' }, '📝 Notes'),
+          store.getNote(`exercise-${exercise.name}`)
+            ? el('button', {
+                className: 'text-xs text-red-500 hover:text-red-700',
+                onClick: () => {
+                  store.deleteNote(`exercise-${exercise.name}`);
+                  render();
+                }
+              }, 'Clear')
+            : null
+        ),
+        el('textarea', {
+          placeholder: 'Add notes for this exercise...',
+          className: 'w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+          rows: '2',
+          value: store.getNote(`exercise-${exercise.name}`),
+          onInput: (e) => {
+            store.setNote(`exercise-${exercise.name}`, e.target.value);
+          }
+        })
       )
     );
 
