@@ -4,6 +4,9 @@ import { store } from '../store.js';
 export default function ProgressView() {
   const container = el('div', { className: 'min-h-screen bg-gray-50 pb-24' });
   let expandedId = null;
+  let filterExercise = '';
+  let filterDateFrom = '';
+  let filterDateTo = '';
 
   const formatDate = (value) => {
     if (!value) return 'Unknown date';
@@ -250,17 +253,97 @@ export default function ProgressView() {
         )
       : null;
 
+    // Filter history
+    let filteredHistory = history;
+
+    if (filterExercise) {
+      filteredHistory = filteredHistory.filter(workout =>
+        workout.exercises.some(ex => ex.name.toLowerCase().includes(filterExercise.toLowerCase()))
+      );
+    }
+
+    if (filterDateFrom) {
+      const fromDate = new Date(filterDateFrom);
+      filteredHistory = filteredHistory.filter(workout => new Date(workout.date) >= fromDate);
+    }
+
+    if (filterDateTo) {
+      const toDate = new Date(filterDateTo);
+      filteredHistory = filteredHistory.filter(workout => new Date(workout.date) <= toDate);
+    }
+
+    const filterControls = el('div', { className: 'bg-white border border-gray-200 rounded-xl p-4 mb-4' },
+      el('div', { className: 'grid grid-cols-1 sm:grid-cols-3 gap-3' },
+        el('div', {},
+          el('label', { className: 'block text-xs font-medium text-gray-700 mb-1' }, 'Exercise Name'),
+          el('input', {
+            type: 'text',
+            placeholder: 'Filter by exercise...',
+            className: 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm',
+            value: filterExercise,
+            onInput: (e) => {
+              filterExercise = e.target.value;
+              render();
+            }
+          })
+        ),
+        el('div', {},
+          el('label', { className: 'block text-xs font-medium text-gray-700 mb-1' }, 'From Date'),
+          el('input', {
+            type: 'date',
+            className: 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm',
+            value: filterDateFrom,
+            onInput: (e) => {
+              filterDateFrom = e.target.value;
+              render();
+            }
+          })
+        ),
+        el('div', {},
+          el('label', { className: 'block text-xs font-medium text-gray-700 mb-1' }, 'To Date'),
+          el('input', {
+            type: 'date',
+            className: 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm',
+            value: filterDateTo,
+            onInput: (e) => {
+              filterDateTo = e.target.value;
+              render();
+            }
+          })
+        )
+      ),
+      (filterExercise || filterDateFrom || filterDateTo)
+        ? el('div', { className: 'mt-3 flex items-center justify-between' },
+            el('span', { className: 'text-xs text-gray-600' },
+              `Showing ${filteredHistory.length} of ${history.length} workouts`
+            ),
+            el('button', {
+              className: 'text-xs text-indigo-600 hover:text-indigo-700 font-medium',
+              onClick: () => {
+                filterExercise = '';
+                filterDateFrom = '';
+                filterDateTo = '';
+                render();
+              }
+            }, 'Clear Filters')
+          )
+        : null
+    );
+
     const historySection = el('div', { className: 'max-w-5xl mx-auto px-4 py-6' },
       el('div', { className: 'flex items-center justify-between mb-4' },
         el('h2', { className: 'text-lg font-semibold text-gray-900' }, 'Workout History'),
         el('span', { className: 'text-sm text-gray-500' }, history.length > 0 ? `${history.length} recorded workout${history.length === 1 ? '' : 's'}` : '')
       ),
-      history.length === 0
+      history.length > 0 ? filterControls : null,
+      filteredHistory.length === 0
         ? el('div', { className: 'bg-white border border-gray-200 rounded-xl p-10 text-center text-gray-500' },
-            'No workouts logged yet. Start your first session to see progress here!'
+            history.length === 0
+              ? 'No workouts logged yet. Start your first session to see progress here!'
+              : 'No workouts match your filters. Try adjusting them.'
           )
         : el('div', { className: 'space-y-4' },
-            ...history.map(renderHistoryCard)
+            ...filteredHistory.map(renderHistoryCard)
           )
     );
 
