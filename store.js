@@ -27,6 +27,14 @@ class WorkoutStore {
     this.currentProgramId = null;
     this.notes = {}; // { workoutId: 'note text', 'day-dayId': 'note', 'exercise-exerciseName': 'note' }
     this.workoutSchedule = {}; // { 'YYYY-MM-DD': { workoutKey: 'day1', workoutName: 'Push Day', isRestDay: false } }
+    this.progressionSettings = {
+      lowRPEThreshold: 7,        // RPE below this suggests weight increase
+      highRPEThreshold: 9,        // RPE at/above this suggests deload
+      completionRateGood: 0.8,    // 80%+ completion needed for progression
+      completionRatePoor: 0.7,    // Below 70% suggests volume reduction
+      weightIncreaseAmount: 5,    // Default lbs to add
+      minSessionsRequired: 3      // Minimum sessions to analyze
+    };
     this.programBuilder = {
       step: 1,
       programName: '',
@@ -66,6 +74,9 @@ class WorkoutStore {
         if (data.workoutSchedule) {
           this.workoutSchedule = data.workoutSchedule;
         }
+        if (data.progressionSettings) {
+          this.progressionSettings = { ...this.progressionSettings, ...data.progressionSettings };
+        }
       }
       if (!this.program && this.currentProgram) {
         this.program = this.normalizeProgram(this.currentProgram);
@@ -97,7 +108,8 @@ class WorkoutStore {
         currentWeek: this.currentWeek,
         history: this.workoutHistory,
         program: this.program,
-        workoutSchedule: this.workoutSchedule
+        workoutSchedule: this.workoutSchedule,
+        progressionSettings: this.progressionSettings
       };
       localStorage.setItem('workoutData', JSON.stringify(payload));
       localStorage.setItem('workout-history', JSON.stringify(this.workoutHistory));
@@ -461,6 +473,7 @@ class WorkoutStore {
   getProgressionSuggestions() {
     const history = this.workoutHistory || [];
     const suggestions = [];
+    const settings = this.progressionSettings;
 
     const exerciseHistory = {};
     history.forEach(workout => {
@@ -484,23 +497,23 @@ class WorkoutStore {
     });
 
     Object.entries(exerciseHistory).forEach(([exerciseName, sessions]) => {
-      if (sessions.length < 2) return;
+      if (sessions.length < settings.minSessionsRequired) return;
 
       const recent = sessions.slice(-4);
       const avgRPE = recent.reduce((sum, s) => sum + s.avgRPE, 0) / recent.length;
       const last = recent[recent.length - 1];
 
-      if (avgRPE > 0 && avgRPE < 7 && last.completionRate >= 0.8) {
+      if (avgRPE > 0 && avgRPE < settings.lowRPEThreshold && last.completionRate >= settings.completionRateGood) {
         suggestions.push({
           type: 'increase_weight',
           exercise: exerciseName,
           priority: 'high',
-          message: `${exerciseName}: RPE ${avgRPE.toFixed(1)} - add 5-10 lbs`,
+          message: `${exerciseName}: RPE ${avgRPE.toFixed(1)} - add ${settings.weightIncreaseAmount} lbs`,
           detail: `You're completing sets with low RPE. Ready for more challenge.`
         });
       }
 
-      if (avgRPE >= 9 && recent.length >= 2) {
+      if (avgRPE >= settings.highRPEThreshold && recent.length >= 2) {
         suggestions.push({
           type: 'deload',
           exercise: exerciseName,
@@ -511,7 +524,7 @@ class WorkoutStore {
       }
 
       const avgCompletion = recent.reduce((sum, s) => sum + s.completionRate, 0) / recent.length;
-      if (avgCompletion < 0.7) {
+      if (avgCompletion < settings.completionRatePoor) {
         suggestions.push({
           type: 'reduce_volume',
           exercise: exerciseName,
@@ -882,6 +895,27 @@ class WorkoutStore {
     }
 
     return streak;
+  }
+
+  // Progression Settings Methods
+
+  updateProgressionSettings(newSettings) {
+    this.progressionSettings = { ...this.progressionSettings, ...newSettings };
+    this.save();
+    this.notify();
+  }
+
+  resetProgressionSettings() {
+    this.progressionSettings = {
+      lowRPEThreshold: 7,
+      highRPEThreshold: 9,
+      completionRateGood: 0.8,
+      completionRatePoor: 0.7,
+      weightIncreaseAmount: 5,
+      minSessionsRequired: 3
+    };
+    this.save();
+    this.notify();
   }
 }
 

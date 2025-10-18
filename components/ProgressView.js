@@ -201,9 +201,140 @@ export default function ProgressView() {
       progress: '🎉'
     };
 
+    const openSettingsModal = () => {
+      const settings = store.progressionSettings;
+
+      const modal = el('div', {
+        className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4',
+        onClick: (e) => {
+          if (e.target === modal) {
+            document.body.removeChild(modal);
+          }
+        }
+      },
+        el('div', { className: 'bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto' },
+          el('h2', { className: 'text-2xl font-bold text-gray-900 mb-6' }, 'Auto-Progression Settings'),
+          el('div', { className: 'space-y-4' },
+            el('div', {},
+              el('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Low RPE Threshold (suggest weight increase)'),
+              el('input', {
+                type: 'number',
+                min: '1',
+                max: '10',
+                step: '0.5',
+                className: 'w-full px-4 py-2 border border-gray-300 rounded-lg',
+                value: settings.lowRPEThreshold,
+                onInput: (e) => {
+                  store.updateProgressionSettings({ lowRPEThreshold: parseFloat(e.target.value) });
+                }
+              }),
+              el('p', { className: 'text-xs text-gray-500 mt-1' }, 'RPE below this value suggests adding weight')
+            ),
+            el('div', {},
+              el('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'High RPE Threshold (suggest deload)'),
+              el('input', {
+                type: 'number',
+                min: '1',
+                max: '10',
+                step: '0.5',
+                className: 'w-full px-4 py-2 border border-gray-300 rounded-lg',
+                value: settings.highRPEThreshold,
+                onInput: (e) => {
+                  store.updateProgressionSettings({ highRPEThreshold: parseFloat(e.target.value) });
+                }
+              }),
+              el('p', { className: 'text-xs text-gray-500 mt-1' }, 'RPE at/above this suggests deloading')
+            ),
+            el('div', {},
+              el('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Good Completion Rate'),
+              el('input', {
+                type: 'number',
+                min: '0',
+                max: '1',
+                step: '0.05',
+                className: 'w-full px-4 py-2 border border-gray-300 rounded-lg',
+                value: settings.completionRateGood,
+                onInput: (e) => {
+                  store.updateProgressionSettings({ completionRateGood: parseFloat(e.target.value) });
+                }
+              }),
+              el('p', { className: 'text-xs text-gray-500 mt-1' }, `Current: ${(settings.completionRateGood * 100).toFixed(0)}% - needed for progression`)
+            ),
+            el('div', {},
+              el('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Poor Completion Rate'),
+              el('input', {
+                type: 'number',
+                min: '0',
+                max: '1',
+                step: '0.05',
+                className: 'w-full px-4 py-2 border border-gray-300 rounded-lg',
+                value: settings.completionRatePoor,
+                onInput: (e) => {
+                  store.updateProgressionSettings({ completionRatePoor: parseFloat(e.target.value) });
+                }
+              }),
+              el('p', { className: 'text-xs text-gray-500 mt-1' }, `Current: ${(settings.completionRatePoor * 100).toFixed(0)}% - below this suggests reducing volume`)
+            ),
+            el('div', {},
+              el('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Weight Increase Amount (lbs)'),
+              el('input', {
+                type: 'number',
+                min: '1',
+                max: '50',
+                step: '1',
+                className: 'w-full px-4 py-2 border border-gray-300 rounded-lg',
+                value: settings.weightIncreaseAmount,
+                onInput: (e) => {
+                  store.updateProgressionSettings({ weightIncreaseAmount: parseInt(e.target.value) });
+                }
+              }),
+              el('p', { className: 'text-xs text-gray-500 mt-1' }, 'Default amount to suggest adding')
+            ),
+            el('div', {},
+              el('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Minimum Sessions Required'),
+              el('input', {
+                type: 'number',
+                min: '1',
+                max: '10',
+                step: '1',
+                className: 'w-full px-4 py-2 border border-gray-300 rounded-lg',
+                value: settings.minSessionsRequired,
+                onInput: (e) => {
+                  store.updateProgressionSettings({ minSessionsRequired: parseInt(e.target.value) });
+                }
+              }),
+              el('p', { className: 'text-xs text-gray-500 mt-1' }, 'Minimum workout sessions before analyzing')
+            )
+          ),
+          el('div', { className: 'flex gap-3 mt-6' },
+            el('button', {
+              className: 'flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-medium',
+              onClick: () => {
+                if (confirm('Reset all settings to defaults?')) {
+                  store.resetProgressionSettings();
+                }
+              }
+            }, 'Reset to Defaults'),
+            el('button', {
+              className: 'flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-medium',
+              onClick: () => document.body.removeChild(modal)
+            }, 'Done')
+          )
+        )
+      );
+
+      document.body.appendChild(modal);
+    };
+
     const suggestionSection = suggestions.length > 0
       ? el('div', { className: 'max-w-5xl mx-auto px-4 py-6' },
-          el('h2', { className: 'text-lg font-semibold text-gray-900 mb-3' }, '💡 Training Suggestions'),
+          el('div', { className: 'flex items-center justify-between mb-3' },
+            el('h2', { className: 'text-lg font-semibold text-gray-900' }, '💡 Training Suggestions'),
+            el('button', {
+              className: 'text-sm text-indigo-600 hover:text-indigo-700 font-medium',
+              onClick: openSettingsModal
+            }, '⚙️ Adjust Settings')
+          ),
           el('div', { className: 'space-y-3' },
             ...suggestions.slice(0, 5).map(suggestion =>
               el('div', {
