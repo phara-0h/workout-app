@@ -370,6 +370,65 @@ class WorkoutStore {
     return null;
   }
 
+  getAllPersonalRecords() {
+    const history = this.workoutHistory || [];
+    const records = {};
+
+    history.forEach(workout => {
+      (workout.exercises || []).forEach(exercise => {
+        const exerciseName = exercise.name;
+        if (!exerciseName) return;
+
+        if (!records[exerciseName]) {
+          records[exerciseName] = {
+            name: exerciseName,
+            maxWeight: 0,
+            maxWeightDate: null,
+            maxReps: 0,
+            maxRepsDate: null,
+            maxVolume: 0,
+            maxVolumeDate: null,
+            estimated1RM: 0
+          };
+        }
+
+        (exercise.sets || []).forEach(set => {
+          const weight = Number(set.weight) || 0;
+          const reps = Number(set.reps) || 0;
+          const volume = weight * reps;
+
+          // Track max weight
+          if (weight > records[exerciseName].maxWeight) {
+            records[exerciseName].maxWeight = weight;
+            records[exerciseName].maxWeightDate = workout.date;
+          }
+
+          // Track max reps (at any weight)
+          if (reps > records[exerciseName].maxReps) {
+            records[exerciseName].maxReps = reps;
+            records[exerciseName].maxRepsDate = workout.date;
+          }
+
+          // Track max volume for single set
+          if (volume > records[exerciseName].maxVolume) {
+            records[exerciseName].maxVolume = volume;
+            records[exerciseName].maxVolumeDate = workout.date;
+          }
+
+          // Estimate 1RM using Brzycki formula: weight × (36 / (37 - reps))
+          if (weight > 0 && reps > 0 && reps < 37) {
+            const estimated1RM = weight * (36 / (37 - reps));
+            if (estimated1RM > records[exerciseName].estimated1RM) {
+              records[exerciseName].estimated1RM = Math.round(estimated1RM);
+            }
+          }
+        });
+      });
+    });
+
+    return Object.values(records).sort((a, b) => b.maxWeight - a.maxWeight);
+  }
+
   normalizeProgram(programData) {
     if (!programData || !Array.isArray(programData.days)) {
       return null;

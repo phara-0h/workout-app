@@ -178,6 +178,44 @@ export default function ProgressView() {
       )
     );
 
+    const personalRecords = store.getAllPersonalRecords();
+    const topPRs = personalRecords.slice(0, 5);
+
+    const prSection = topPRs.length > 0
+      ? el('div', { className: 'max-w-5xl mx-auto px-4 py-6' },
+          el('h2', { className: 'text-lg font-semibold text-gray-900 mb-3' }, 'Personal Records'),
+          el('div', { className: 'space-y-3' },
+            ...topPRs.map(record =>
+              el('div', { className: 'bg-white border border-gray-200 rounded-xl p-4' },
+                el('div', { className: 'flex items-start justify-between' },
+                  el('div', { className: 'flex-1' },
+                    el('h3', { className: 'font-semibold text-gray-900' }, record.name),
+                    el('div', { className: 'mt-2 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm' },
+                      el('div', {},
+                        el('p', { className: 'text-gray-500 text-xs' }, 'Max Weight'),
+                        el('p', { className: 'font-semibold text-indigo-600' }, `${record.maxWeight} lbs`)
+                      ),
+                      el('div', {},
+                        el('p', { className: 'text-gray-500 text-xs' }, 'Max Reps'),
+                        el('p', { className: 'font-semibold text-green-600' }, `${record.maxReps} reps`)
+                      ),
+                      el('div', {},
+                        el('p', { className: 'text-gray-500 text-xs' }, 'Est. 1RM'),
+                        el('p', { className: 'font-semibold text-purple-600' }, `${record.estimated1RM} lbs`)
+                      ),
+                      el('div', {},
+                        el('p', { className: 'text-gray-500 text-xs' }, 'Max Volume'),
+                        el('p', { className: 'font-semibold text-orange-600' }, `${record.maxVolume} lbs`)
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      : null;
+
     const historySection = el('div', { className: 'max-w-5xl mx-auto px-4 py-6' },
       el('div', { className: 'flex items-center justify-between mb-4' },
         el('h2', { className: 'text-lg font-semibold text-gray-900' }, 'Workout History'),
@@ -195,6 +233,7 @@ export default function ProgressView() {
     container.appendChild(header);
     container.appendChild(summaryGrid);
     container.appendChild(big3Section);
+    if (prSection) container.appendChild(prSection);
     container.appendChild(historySection);
   };
 
