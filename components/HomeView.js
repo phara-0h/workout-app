@@ -31,7 +31,7 @@ export default function HomeView() {
   );
   container.appendChild(header);
 
-  const navButtons = el('div', { className: 'max-w-4xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4' },
+  const navButtons = el('div', { className: 'max-w-4xl mx-auto px-4 py-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4' },
     el('button', {
       className: 'bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors shadow-lg',
       onClick: () => store.setView('workout')
@@ -41,11 +41,15 @@ export default function HomeView() {
       onClick: () => store.setView('progress')
     }, '📈 View Progress'),
     el('button', {
-      className: 'bg-white hover:bg-gray-50 text-gray-700 font-semibold py-4 px-6 rounded-xl transition-colors shadow-lg border-2 border-gray-200',
+      className: 'bg-green-500 hover:bg-green-600 text-white font-semibold py-4 px-6 rounded-xl transition-colors shadow-lg',
+      onClick: () => store.setView('calendar')
+    }, '📅 Calendar'),
+    el('button', {
+      className: 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold py-4 px-6 rounded-xl transition-colors shadow-lg border-2 border-gray-200 dark:border-gray-600',
       onClick: () => store.setView('exercise-library')
     }, '📚 Exercise Library'),
     el('button', {
-      className: 'bg-white hover:bg-gray-50 text-gray-700 font-semibold py-4 px-6 rounded-xl transition-colors shadow-lg border-2 border-gray-200',
+      className: 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold py-4 px-6 rounded-xl transition-colors shadow-lg border-2 border-gray-200 dark:border-gray-600',
       onClick: () => store.startProgramEdit()
     }, '✏️ Edit Program')
   );

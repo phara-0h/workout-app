@@ -23,14 +23,16 @@
 - [x] Edit/delete notes (clear button)
 - [x] Real-time saving to localStorage
 
-### 3. Calendar & Scheduling
-- [ ] Calendar view of planned workouts
-- [ ] Schedule workouts for specific dates
-- [ ] Mark rest days
-- [ ] Track workout streaks
-- [ ] Weekly/monthly overview
-- [ ] Missed workout indicators
-**Status:** Deferred (would require significant UI work)
+### 3. Calendar & Scheduling ✅ COMPLETE
+- [x] Calendar view of planned workouts
+- [x] Schedule workouts for specific dates
+- [x] Mark rest days
+- [x] Track workout streaks
+- [x] Monthly overview
+- [x] Missed workout indicators
+- [x] Visual indicators (completed, scheduled, rest days, missed)
+- [x] Interactive day details modal
+- [x] Schedule management (clear/reschedule)
 
 ### 4. Plate Calculator ✅ COMPLETE
 - [x] Input target weight
@@ -78,18 +80,18 @@
 
 ## Phase 3 Summary
 
-**Status:** 6 of 8 features complete!
+**Status:** 7 of 8 features complete!
 
 **Completed Features:**
 1. ✅ **Superset Support** - Link exercises and visual indicators
 2. ✅ **Notes System** - Add notes to workouts and exercises
-3. ✅ **Plate Calculator** - Visual barbell loading helper
-4. ✅ **Dark Mode** - Theme toggle with localStorage persistence
-5. ✅ **Data Export** - Export to JSON/CSV with filters
-6. ✅ **Auto-Progression Logic** - Training suggestions based on performance
+3. ✅ **Calendar & Scheduling** - Plan workouts, track streaks, mark rest days
+4. ✅ **Plate Calculator** - Visual barbell loading helper
+5. ✅ **Dark Mode** - Theme toggle with localStorage persistence
+6. ✅ **Data Export** - Export to JSON/CSV with filters
+7. ✅ **Auto-Progression Logic** - Training suggestions based on performance
 
 **Deferred Features:**
-- Calendar & Scheduling (large UI undertaking)
 - AI Features (requires API keys & ongoing costs)
 
 **Ready for Testing:** Phase 3 core features are complete and ready for user testing!

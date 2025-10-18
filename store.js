@@ -26,6 +26,7 @@ class WorkoutStore {
     this.currentProgram = null;
     this.currentProgramId = null;
     this.notes = {}; // { workoutId: 'note text', 'day-dayId': 'note', 'exercise-exerciseName': 'note' }
+    this.workoutSchedule = {}; // { 'YYYY-MM-DD': { workoutKey: 'day1', workoutName: 'Push Day', isRestDay: false } }
     this.programBuilder = {
       step: 1,
       programName: '',
@@ -62,6 +63,9 @@ class WorkoutStore {
         if (!this.program && data.program) {
           this.program = data.program;
         }
+        if (data.workoutSchedule) {
+          this.workoutSchedule = data.workoutSchedule;
+        }
       }
       if (!this.program && this.currentProgram) {
         this.program = this.normalizeProgram(this.currentProgram);
@@ -92,7 +96,8 @@ class WorkoutStore {
       const payload = {
         currentWeek: this.currentWeek,
         history: this.workoutHistory,
-        program: this.program
+        program: this.program,
+        workoutSchedule: this.workoutSchedule
       };
       localStorage.setItem('workoutData', JSON.stringify(payload));
       localStorage.setItem('workout-history', JSON.stringify(this.workoutHistory));
@@ -789,6 +794,94 @@ class WorkoutStore {
     if (confirm('Are you sure you want to sign out?')) {
       await signOut();
     }
+  }
+
+  // Calendar & Scheduling Methods
+
+  scheduleWorkout(dateKey, workoutKey, workoutName) {
+    this.workoutSchedule[dateKey] = {
+      workoutKey,
+      workoutName,
+      isRestDay: false
+    };
+    this.save();
+  }
+
+  scheduleRestDay(dateKey) {
+    this.workoutSchedule[dateKey] = {
+      isRestDay: true
+    };
+    this.save();
+  }
+
+  clearSchedule(dateKey) {
+    delete this.workoutSchedule[dateKey];
+    this.save();
+  }
+
+  getWorkoutSchedule(year, month) {
+    // Filter schedule for the given month
+    const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const filtered = {};
+    Object.keys(this.workoutSchedule).forEach(dateKey => {
+      if (dateKey.startsWith(prefix)) {
+        filtered[dateKey] = this.workoutSchedule[dateKey];
+      }
+    });
+    return filtered;
+  }
+
+  getWorkoutStreak() {
+    if (!this.workoutHistory || this.workoutHistory.length === 0) {
+      return 0;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const sortedHistory = [...this.workoutHistory].sort((a, b) =>
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    let streak = 0;
+    let currentDate = new Date(today);
+
+    for (const workout of sortedHistory) {
+      const workoutDate = new Date(workout.date);
+      workoutDate.setHours(0, 0, 0, 0);
+
+      // Check if this workout is from today or consecutive days
+      const daysDiff = Math.floor((currentDate - workoutDate) / (1000 * 60 * 60 * 24));
+
+      if (daysDiff === 0) {
+        streak++;
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else if (daysDiff > 1) {
+        // Gap in workout history - check if rest days were scheduled
+        let hasRestDay = false;
+        for (let i = 1; i < daysDiff; i++) {
+          const checkDate = new Date(currentDate);
+          checkDate.setDate(checkDate.getDate() - i);
+          const checkKey = checkDate.toISOString().split('T')[0];
+          if (this.workoutSchedule[checkKey]?.isRestDay) {
+            hasRestDay = true;
+          }
+        }
+
+        if (!hasRestDay) {
+          break; // Streak broken
+        } else {
+          // Continue streak if rest days filled the gap
+          streak++;
+          currentDate = new Date(workoutDate);
+          currentDate.setDate(currentDate.getDate() - 1);
+        }
+      } else {
+        break;
+      }
+    }
+
+    return streak;
   }
 }
 

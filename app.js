@@ -12,6 +12,7 @@ import { ExerciseLibraryView } from './components/ExerciseLibraryView.js';
 import ProgramBuilderView from './components/ProgramBuilderView.js';
 import EmptyStateView from './components/EmptyStateView.js';
 import TrackWorkoutView from './components/TrackWorkoutView.js';
+import { CalendarView } from './components/CalendarView.js';
 
 function render() {
   const root = document.getElementById('root');
@@ -36,6 +37,9 @@ function render() {
       break;
     case 'progress':
       view = ProgressView();
+      break;
+    case 'calendar':
+      view = CalendarView(store);
       break;
     case 'edit':
       view = EditView();
