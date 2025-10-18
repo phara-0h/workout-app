@@ -1,5 +1,6 @@
 import { el } from '../utils.js';
 import { store } from '../store.js';
+import PlateCalculator from './PlateCalculator.js';
 
 export default function TrackWorkoutView() {
   let workout = store.activeWorkout;
@@ -96,7 +97,7 @@ export default function TrackWorkoutView() {
       )
     );
 
-    const summary = el('div', { className: 'max-w-4xl mx-auto px-4 py-4 grid gap-4 sm:grid-cols-3' },
+    const summary = el('div', { className: 'max-w-4xl mx-auto px-4 py-4 grid gap-4 sm:grid-cols-4' },
       el('div', { className: 'bg-white rounded-xl border border-indigo-100 p-4 shadow-sm' },
         el('p', { className: 'text-sm text-gray-500' }, 'Exercises'),
         el('p', { className: 'text-2xl font-semibold text-indigo-700' }, exercises.length.toString())
@@ -104,6 +105,20 @@ export default function TrackWorkoutView() {
       el('div', { className: 'bg-white rounded-xl border border-indigo-100 p-4 shadow-sm' },
         el('p', { className: 'text-sm text-gray-500' }, 'Sets Completed'),
         el('p', { className: 'text-2xl font-semibold text-indigo-700' }, `${completedSets}/${totalSets}`)
+      ),
+      el('div', { className: 'bg-white rounded-xl border border-indigo-100 p-4 shadow-sm cursor-pointer hover:bg-indigo-50 transition-colors' },
+        el('button', {
+          className: 'w-full h-full flex flex-col items-center justify-center gap-1',
+          onClick: () => {
+            const calculator = PlateCalculator(135, () => {
+              document.body.removeChild(calculator);
+            });
+            document.body.appendChild(calculator);
+          }
+        },
+          el('p', { className: 'text-2xl' }, '🏋️'),
+          el('p', { className: 'text-xs text-gray-600 font-medium' }, 'Plate Calc')
+        )
       ),
       el('div', { className: 'bg-white rounded-xl border border-indigo-100 p-4 shadow-sm flex flex-col gap-3' },
         el('div', { className: 'flex items-center justify-between' },
