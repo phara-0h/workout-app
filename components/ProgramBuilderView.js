@@ -205,6 +205,110 @@ export default function ProgramBuilderView() {
     return card;
   };
 
+  const openSupersetModal = (currentExercise, currentIndex) => {
+    const currentDay = state.days[state.currentDayIndex];
+    const selectedExercises = new Set();
+
+    // If current exercise is already in a superset, pre-select all exercises in that group
+    if (currentExercise.superset_group) {
+      currentDay.exercises.forEach((ex, idx) => {
+        if (ex.superset_group === currentExercise.superset_group) {
+          selectedExercises.add(idx);
+        }
+      });
+    } else {
+      // Otherwise, just select the current exercise
+      selectedExercises.add(currentIndex);
+    }
+
+    const modal = el('div', {
+      className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4',
+      onClick: (e) => {
+        if (e.target === modal) {
+          document.body.removeChild(modal);
+        }
+      }
+    },
+      el('div', { className: 'bg-white rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto' },
+        el('h2', { className: 'text-xl font-bold text-gray-900 mb-4' }, 'Create Superset'),
+        el('p', { className: 'text-sm text-gray-600 mb-4' }, 'Select 2 or more exercises to link as a superset:'),
+        el('div', { className: 'space-y-2 mb-6' },
+          ...currentDay.exercises.map((ex, idx) => {
+            if (ex.is_main) return null; // Skip main lifts
+
+            const checkbox = el('input', {
+              type: 'checkbox',
+              className: 'mr-3 h-4 w-4 text-purple-600 rounded',
+              checked: selectedExercises.has(idx),
+              onChange: (e) => {
+                if (e.target.checked) {
+                  selectedExercises.add(idx);
+                } else {
+                  selectedExercises.delete(idx);
+                }
+                // Update the counter display
+                const count = document.getElementById('superset-count');
+                if (count) {
+                  count.textContent = `${selectedExercises.size} exercise${selectedExercises.size !== 1 ? 's' : ''} selected`;
+                }
+              }
+            });
+
+            return el('label', {
+              className: 'flex items-center p-3 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer border border-gray-200'
+            },
+              checkbox,
+              el('span', { className: 'text-gray-900 font-medium' }, ex.exercise_name)
+            );
+          }).filter(Boolean)
+        ),
+        el('div', { className: 'flex items-center justify-between mb-4' },
+          el('span', {
+            id: 'superset-count',
+            className: 'text-sm text-gray-600'
+          }, `${selectedExercises.size} exercise${selectedExercises.size !== 1 ? 's' : ''} selected`),
+          selectedExercises.size >= 2
+            ? el('span', { className: 'text-xs text-green-600 font-semibold' }, '✓ Valid superset')
+            : el('span', { className: 'text-xs text-orange-600 font-semibold' }, 'Select at least 2 exercises')
+        ),
+        el('div', { className: 'flex gap-3' },
+          el('button', {
+            className: 'flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-medium',
+            onClick: () => document.body.removeChild(modal)
+          }, 'Cancel'),
+          el('button', {
+            className: 'flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-medium',
+            onClick: () => {
+              if (selectedExercises.size < 2) {
+                alert('Please select at least 2 exercises to create a superset');
+                return;
+              }
+
+              // Clear old superset groups from selected exercises
+              selectedExercises.forEach(idx => {
+                delete currentDay.exercises[idx].superset_group;
+              });
+
+              // Create new superset group
+              const maxGroup = Math.max(0, ...currentDay.exercises.map(e => e.superset_group || 0));
+              const newGroup = maxGroup + 1;
+
+              // Assign new group to selected exercises
+              selectedExercises.forEach(idx => {
+                currentDay.exercises[idx].superset_group = newGroup;
+              });
+
+              document.body.removeChild(modal);
+              render();
+            }
+          }, 'Create Superset')
+        )
+      )
+    );
+
+    document.body.appendChild(modal);
+  };
+
   const renderExerciseCard = (exercise, index) => {
     const currentDay = state.days[state.currentDayIndex];
     const supersetGroup = exercise.superset_group;
@@ -230,24 +334,18 @@ export default function ProgramBuilderView() {
             : el('p', { className: 'text-sm text-gray-600' }, `${exercise.sets} @ ${exercise.rpe}`)
         ),
         el('div', { className: 'flex items-center gap-2' },
-          !exercise.is_main && index > 0
+          !exercise.is_main
             ? el('button', {
-                className: 'text-purple-600 hover:text-purple-800 text-sm font-medium',
+                className: 'text-purple-600 hover:text-purple-800 text-sm font-medium px-2 py-1',
                 onClick: () => {
-                  const prevExercise = currentDay.exercises[index - 1];
-                  if (!exercise.superset_group && !prevExercise.superset_group) {
-                    // Create new superset group
-                    const maxGroup = Math.max(0, ...currentDay.exercises.map(e => e.superset_group || 0));
-                    prevExercise.superset_group = maxGroup + 1;
-                    exercise.superset_group = maxGroup + 1;
-                  } else if (prevExercise.superset_group && !exercise.superset_group) {
-                    // Add to existing superset
-                    exercise.superset_group = prevExercise.superset_group;
-                  } else if (exercise.superset_group) {
-                    // Remove from superset
+                  if (exercise.superset_group) {
+                    // Unlink: remove from superset
                     delete exercise.superset_group;
+                    render();
+                  } else {
+                    // Link: open modal to select exercises
+                    openSupersetModal(exercise, index);
                   }
-                  render();
                 }
               }, supersetGroup ? '⛓️‍💥 Unlink' : '⛓️ Link')
             : null,
